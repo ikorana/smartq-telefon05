@@ -1,0 +1,59 @@
+name: telefon05
+description: "Smart Home Pelephone"
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+version: 4.0.0+2
+
+environment:
+  sdk: ^3.9.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+  get: ^4.7.3
+  connectivity_plus: ^7.1.1
+  shared_preferences: ^2.5.5
+  get_storage: ^2.1.1
+  #mqtt_client: ^10.11.11
+  mqtt5_client: ^4.17.0
+  flex_color_picker: ^3.8.0
+  audioplayers: ^6.6.0
+  simple_numpad: ^1.0.5
+  flutter_tts: ^4.2.2
+  speech_to_text: ^7.0.0
+  flutter_secure_storage: ^9.2.4
+  uuid: ^4.5.1
+  http: ^1.2.1
+  flutter_local_notifications: ^18.0.1
+  just_audio: ^0.9.42
+  just_audio_background: ^0.0.1-beta.15
+  tftp: ^1.2.4
+  path_provider: ^2.1.3
+  geolocator: ^13.0.2
+
+  cupertino_icons: ^1.0.8
+  firebase_core: ^4.11.0
+  firebase_messaging: ^16.4.1
+
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.13.1 # İkon üretim paketi
+
+# Paketin ikonunuzu bulması için yapılandırma ayarları
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/logo/logo.png" # Logoyu koyduğunuz tam yol
+  min_sdk_android: 21 # Projenizin minimum Android SDK değeri
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+    - assets/audio/
+
+

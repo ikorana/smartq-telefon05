@@ -1,0 +1,55 @@
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "telefon05",
+          "appId": "1:425241601097:android:5a2308fda0efa17be80b98",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "ios": {
+        "default": {
+          "projectId": "telefon05",
+          "appId": "1:425241601097:ios:7d44bff077f31331e80b98",
+          "uploadDebugSymbols": false,
+          "fileOutput": "ios/Runner/GoogleService-Info.plist"
+        }
+      },
+      "macos": {
+        "default": {
+          "projectId": "telefon05",
+          "appId": "1:425241601097:ios:7d44bff077f31331e80b98",
+          "uploadDebugSymbols": false,
+          "fileOutput": "macos/Runner/GoogleService-Info.plist"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "telefon05",
+          "configurations": {
+            "android": "1:425241601097:android:5a2308fda0efa17be80b98",
+            "ios": "1:425241601097:ios:7d44bff077f31331e80b98",
+            "macos": "1:425241601097:ios:7d44bff077f31331e80b98",
+            "web": "1:425241601097:web:3cd85867301fcf3fe80b98",
+            "windows": "1:425241601097:web:c9ac1101f3fbc814e80b98"
+          }
+        }
+      }
+    }
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "disallowLegacyRuntimeConfig": true,
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,411 @@
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+
+import '../../../user/appUser.dart';
+import '../../../user/userManagementService.dart';
+import '../dashboardController.dart';
+import 'groupTimingDialog.dart';
+
+class GroupButton extends StatelessWidget {
+  final GrpInfo group;
+  final Function(int id)? onTap;
+
+  const GroupButton({
+    super.key,
+    required this.group,
+    this.onTap,
+  });
+
+  // Seçilebilir 11 İkon (0-10 arası)
+  static const List<IconData> groupIcons = [
+    Icons.layers,          // 0
+    Icons.lightbulb,       // 1
+    Icons.ac_unit,         // 2
+    Icons.home,            // 3
+    Icons.settings,        // 4
+    Icons.security,        // 5
+    Icons.timer,           // 6
+    Icons.favorite,        // 7
+    Icons.flash_on,        // 8
+    Icons.palette,         // 9
+    Icons.weekend,         // 10
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
+    return InkWell(
+      onTap: () => _showGroupActionDialog(context),
+      onLongPress: () => _showContextMenu(context),
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surface,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              _getIconData(group.icon),
+              size: 24,
+              color: theme.colorScheme.primary,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              group.name,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 12,
+                color: theme.colorScheme.onSurface,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showGroupActionDialog(BuildContext context) {
+    final theme = Theme.of(context);
+    final controller = Get.find<DashboardController>();
+    final userManager = Get.find<UserManagementService>();
+    
+    // Kanalları 1'den başlatarak listeleyelim
+    final int totalChannels = userManager.activeUser.value?.totalChannels ?? 1;
+    
+    // Dropdown öğeleri: "Tüm Kanallar" (9) + Normal Kanallar (1, 2, 3...)
+    final List<Map<String, dynamic>> items = [
+      {'label': 'all_channels'.tr, 'value': 9},
+      ...List.generate(totalChannels, (index) => {
+        'label': '${'channel'.tr} ${index + 1}',
+        'value': index + 1
+      }),
+    ];
+
+    // Eğer kontrolcüdeki değer mevcut listede yoksa varsayılan olarak 9 yapalım
+    bool valueExists = items.any((item) => item['value'] == controller.selectedGroupChannel.value);
+    if (!valueExists) {
+      controller.selectedGroupChannel.value = 9;
+    }
+
+    Get.dialog(
+      Dialog(
+        backgroundColor: theme.scaffoldBackgroundColor,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                group.name,
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
+              ),
+              const SizedBox(height: 20),
+              
+              // Kanal Seçimi (Combobox)
+              Obx(() => Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surface,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.3)),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<int>(
+                    value: controller.selectedGroupChannel.value,
+                    isExpanded: true,
+                    items: items.map((item) {
+                      return DropdownMenuItem<int>(
+                        value: item['value'],
+                        child: Text(item['label'], style: TextStyle(color: theme.colorScheme.onSurface)),
+                      );
+                    }).toList(),
+                    onChanged: (val) {
+                      if (val != null) controller.selectedGroupChannel.value = val;
+                    },
+                    dropdownColor: theme.scaffoldBackgroundColor,
+                  ),
+                ),
+              )),
+              
+              const SizedBox(height: 20),
+              
+              // Parlaklık Slider'ı
+              Obx(() => Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('brightness'.tr, style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 12)),
+                      Text("%${((controller.groupPowerValue.value / 254) * 100).toInt()}", 
+                        style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                  Slider(
+                    value: controller.groupPowerValue.value,
+                    min: 1,
+                    max: 254,
+                    divisions: 253,
+                    onChanged: (val) => controller.groupPowerValue.value = val,
+                    onChangeEnd: (val) {
+                      controller.groupOn(
+                        group.id, 
+                        power: val.toInt(),
+                        channel: controller.selectedGroupChannel.value
+                      );
+                    },
+                  ),
+                ],
+              )),
+
+              const SizedBox(height: 15),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _buildActionButton(
+                    context,
+                    label: 'open'.tr,
+                    icon: Icons.power_settings_new,
+                    color: Colors.green,
+                    onTap: () {
+                      controller.groupOn(
+                        group.id, 
+                        power: controller.groupPowerValue.value.toInt(),
+                        channel: controller.selectedGroupChannel.value
+                      );
+                    },
+                  ),
+                  _buildActionButton(
+                    context,
+                    label: 'close'.tr,
+                    icon: Icons.power_off,
+                    color: Colors.redAccent,
+                    onTap: () {
+                      controller.groupOff(
+                        group.id,
+                        channel: controller.selectedGroupChannel.value
+                      );
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 15),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _buildActionButton(
+                    context,
+                    label: 'zamanlama'.tr,
+                    icon: Icons.access_time_outlined,
+                    color: Colors.orange,
+                    onTap: () {
+                      // Zamanlama ekranı açılırken arka planda bilgileri isteyelim
+                      controller.getGroupTiming(group.id);
+
+                      Get.dialog(
+                        GroupTimingDialog(
+                          title: group.name,
+                          id: group.id,
+                          getCommand: 'get_grp_time',
+                          onSave: (time1, time2) {
+                            controller.saveGroupTiming(group.id, time1, time2);
+                          },
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              TextButton(
+                onPressed: () => Get.back(),
+                child: Text('close'.tr, style: TextStyle(color: theme.colorScheme.primary)),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionButton(BuildContext context, {required String label, required IconData icon, required Color color, required VoidCallback onTap}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(15),
+      child: Container(
+        width: 100,
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(15),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: color, size: 26),
+            const SizedBox(height: 6),
+            Text(label, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 12)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showContextMenu(BuildContext context) {
+    final theme = Theme.of(context);
+    Get.bottomSheet(
+      Container(
+        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 10),
+        decoration: BoxDecoration(
+          color: theme.scaffoldBackgroundColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              group.name,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: theme.colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: 15),
+            _buildContextItem(Icons.edit_outlined, "isim_degistir".tr, () {
+              Get.back(); 
+              Future.delayed(const Duration(milliseconds: 100), () => _showRenameDialog(context));
+            }),
+            _buildContextItem(Icons.category_outlined, "icon_degistir".tr, () {
+              Get.back(); 
+              Future.delayed(const Duration(milliseconds: 100), () => _showIconPicker(context));
+            }),
+            _buildContextItem(Icons.visibility_off_outlined, "gizle".tr, () {
+              Get.back();
+              Future.delayed(const Duration(milliseconds: 100), () => _confirmHide(context));
+            }),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showIconPicker(BuildContext context) {
+    final theme = Theme.of(context);
+    final UserManagementService userManager = Get.find<UserManagementService>();
+
+    Get.defaultDialog(
+      title: 'icon_degistir'.tr,
+      titleStyle: TextStyle(color: theme.colorScheme.onSurface),
+      backgroundColor: theme.scaffoldBackgroundColor,
+      content: SizedBox(
+        width: double.maxFinite,
+        height: 200,
+        child: GridView.builder(
+          shrinkWrap: true,
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 4,
+            mainAxisSpacing: 10,
+            crossAxisSpacing: 10,
+          ),
+          itemCount: groupIcons.length,
+          itemBuilder: (context, index) {
+            return InkWell(
+              onTap: () {
+                Get.back();
+                userManager.updateGroupIcon(group.id, index);
+              },
+              child: Container(
+                decoration: BoxDecoration(
+                  color: group.icon == index ? theme.colorScheme.primary.withValues(alpha: 0.1) : Colors.transparent,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: group.icon == index ? theme.colorScheme.primary : Colors.transparent,
+                  ),
+                ),
+                child: Icon(groupIcons[index], color: theme.colorScheme.primary),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  void _confirmHide(BuildContext context) {
+    final theme = Theme.of(context);
+    final UserManagementService userManager = Get.find<UserManagementService>();
+
+    Get.defaultDialog(
+      title: 'gizle'.tr,
+      middleText: 'group_hide_confirm'.tr,
+      backgroundColor: theme.scaffoldBackgroundColor,
+      textConfirm: 'yes'.tr,
+      textCancel: 'no'.tr,
+      confirmTextColor: Colors.white,
+      buttonColor: Colors.redAccent,
+      onConfirm: () {
+        Get.back();
+        userManager.updateGroupIcon(group.id, 11);
+      },
+    );
+  }
+
+  void _showRenameDialog(BuildContext context) {
+    final theme = Theme.of(context);
+    final TextEditingController controller = TextEditingController(text: group.name);
+    final UserManagementService userManager = Get.find<UserManagementService>();
+
+    Get.defaultDialog(
+      title: 'isim_degistir'.tr,
+      backgroundColor: theme.scaffoldBackgroundColor,
+      content: Padding(
+        padding: const EdgeInsets.all(15),
+        child: TextField(
+          controller: controller,
+          maxLength: 20,
+          style: TextStyle(color: theme.colorScheme.onSurface),
+          decoration: InputDecoration(
+            counterStyle: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
+            enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: theme.colorScheme.primary.withValues(alpha: 0.3))),
+          ),
+        ),
+      ),
+      onConfirm: () {
+        if (controller.text.isNotEmpty) {
+          Get.back();
+          userManager.updateGroupName(group.id, controller.text);
+        }
+      },
+    );
+  }
+
+  Widget _buildContextItem(IconData icon, String label, VoidCallback onTap) {
+    return ListTile(
+      leading: Icon(icon, color: Get.theme.colorScheme.primary),
+      title: Text(label),
+      onTap: onTap,
+    );
+  }
+
+  IconData _getIconData(int iconIndex) {
+    if (iconIndex >= 0 && iconIndex < groupIcons.length) {
+      return groupIcons[iconIndex];
+    }
+    return Icons.layers;
+  }
+}
