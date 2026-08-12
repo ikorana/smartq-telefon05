@@ -300,9 +300,28 @@ class UserManagementService extends GetxService {
     activeUser.value!.switches = switchString;
     activeSwitches.assignAll(switches.map((j) => SwitchInfo.fromJson(j)).toList());
     activeUser.value!.switchList = activeSwitches.toList();
-    activeLogicDevices.assignAll(
-      activeSwitches.where((s) => s.type == 0 || s.type == 3).map((s) => BaseDevice.createFromMap(s.toJson())).toList()
-    );
+
+    // ÖNEMLİ: activeLogicDevices'i toptan (assignAll ile sıfırdan) yeniden
+    // kurmak, termostatların push_temp/get_temp ile canlı güncellenen
+    // durumunu (level/setPoint/relayStatus/workType) her switch_intro
+    // yenilemesinde sıfırlıyordu — çünkü SwitchInfo canlı sıcaklık/setpoint
+    // taşımıyor (sadece statik/oluşturma anı verisi). Bunun yerine: id'si
+    // eşleşen MEVCUT cihazı koru (sadece isim/oda gibi statik alanları
+    // güncelle), sadece gerçekten yeni olan switch'leri ekle.
+    final relevantSwitches = activeSwitches.where((s) => s.type == 0 || s.type == 3);
+    final List<BaseDevice> merged = [];
+    for (final s in relevantSwitches) {
+      final existing = activeLogicDevices.firstWhereOrNull((d) => d.id == s.id);
+      if (existing != null) {
+        existing.name = s.name;
+        existing.roomId = s.room;
+        merged.add(existing);
+      } else {
+        merged.add(BaseDevice.createFromMap(s.toJson()));
+      }
+    }
+    activeLogicDevices.assignAll(merged);
+
     saveOrUpdateUser(activeUser.value!);
   }
 
@@ -449,7 +468,7 @@ class UserManagementService extends GetxService {
       final index = activeSwitches.indexOf(sw);
       activeSwitches[index] = SwitchInfo(
         type: sw.type, id: sw.id, name: name, icon: sw.icon, level: sw.level,
-        sensorId: sw.sensorId, sensorInstance: sw.sensorInstance,
+        sensorId: sw.sensorId, sensorInstance: sw.sensorInstance, sensorChannel: sw.sensorChannel,
         relayId: sw.relayId, relayChannel: sw.relayChannel, room: sw.room
       );
       activeUser.value!.switches = jsonEncode(activeSwitches.map((s) => s.toJson()).toList());
@@ -463,7 +482,7 @@ class UserManagementService extends GetxService {
       final index = activeSwitches.indexOf(sw);
       activeSwitches[index] = SwitchInfo(
         type: sw.type, id: sw.id, name: sw.name, icon: sw.icon, level: sw.level,
-        sensorId: sw.sensorId, sensorInstance: sw.sensorInstance,
+        sensorId: sw.sensorId, sensorInstance: sw.sensorInstance, sensorChannel: sw.sensorChannel,
         relayId: sw.relayId, relayChannel: sw.relayChannel, room: roomId
       );
       activeUser.value!.switches = jsonEncode(activeSwitches.map((s) => s.toJson()).toList());

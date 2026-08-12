@@ -188,6 +188,26 @@ else if (com == 'ins_intro') {
       "rka": relayChannel,
       "senschn": sensorChannel,
     });
+
+    // Termostat (type=3): görünür switch kaydıyla birlikte, gerçek çalışan
+    // hedefi (instance_t) de aynı anda ayarlıyoruz — tek adımda tam atama,
+    // ayrıca ins_temp popup'ından tekrar kaydetmeye gerek kalmıyor.
+    // Diğer tipler (anahtar/buton vb.) için bunu yapmıyoruz: DALI instance'ları
+    // bir virtual switch olmadan da (ins_anahtar ekranından) atanabilmeli.
+    if (type == 3 && sensorId != 0) {
+      _sendBoxCommand({
+        "com": "set_instance",
+        "adr": sensorId,
+        "ins": sensorInstance,
+        "kanal": sensorChannel,
+        "act": 1,
+        "stat": 0,
+        "cmtype": 0,
+        "cmadr": relayId,
+        "pro": 15,
+        "ins_kanal": relayChannel,
+      });
+    }
   }
 
   void deleteSwitch(int id) {

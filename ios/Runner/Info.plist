@@ -39,6 +39,8 @@
 	<string>Bu uygulama, ağınızdaki cihazları bulmak ve onlarla iletişim kurmak için yerel ağ erişimine ihtiyaç duyar.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Bu uygulama, size doğru hava durumu bilgisi sunabilmek için konumunuza ihtiyaç duyar.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Bu uygulama, size doğru hava durumu bilgisi sunabilmek için konumunuza ihtiyaç duyar.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Bu uygulama, sesli komutlarınızı algılayabilmek için mikrofona erişim izni ister.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>

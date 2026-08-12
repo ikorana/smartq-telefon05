@@ -1521,101 +1521,136 @@ class DeviceSetupPage extends GetView<DeviceSetupController> {
             sensorInstances = userManager.activeInsIntroList.where((ins) => ins.adr == selectedSensorId).toList();
           }
 
+          const double fieldFontSize = 21;
+          const double labelFontSize = 18;
+          final fieldTextStyle = TextStyle(color: theme.colorScheme.onSurface, fontSize: fieldFontSize);
+          InputDecoration fieldDecoration(String label) => InputDecoration(
+            labelText: label,
+            labelStyle: TextStyle(fontSize: labelFontSize, color: theme.colorScheme.onSurface.withValues(alpha: 0.7)),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+          );
+
           return AlertDialog(
-            title: Text('add_switch'.tr),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: Text(
+              'add_switch'.tr,
+              style: TextStyle(fontSize: 27, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
+            ),
             backgroundColor: theme.scaffoldBackgroundColor,
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: nameController,
-                    style: TextStyle(color: theme.colorScheme.onSurface),
-                    decoration: InputDecoration(labelText: 'switch_name'.tr),
-                  ),
-                  const SizedBox(height: 10),
-                  DropdownButtonFormField<int>(
-                    value: selectedType,
-                    dropdownColor: theme.scaffoldBackgroundColor,
-                    style: TextStyle(color: theme.colorScheme.onSurface),
-                    items: List.generate(types.length, (i) => 
-                      DropdownMenuItem(value: i, child: Text(types[i]))
+            content: SizedBox(
+              width: 600,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: nameController,
+                      style: fieldTextStyle,
+                      decoration: fieldDecoration('switch_name'.tr),
                     ),
-                    onChanged: (val) {
-                      setState(() {
-                        selectedType = val ?? 0;
-                      });
-                    },
-                    decoration: InputDecoration(labelText: 'switch_type'.tr),
-                  ),
-                  
-                  if (selectedType != 0) ...[
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 24),
                     DropdownButtonFormField<int>(
-                      value: selectedSensorId,
+                      value: selectedType,
                       dropdownColor: theme.scaffoldBackgroundColor,
-                      style: TextStyle(color: theme.colorScheme.onSurface),
-                      hint: Text('select_sensor'.tr, style: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: 0.5))),
-                      items: sensorDevices.map((d) => 
-                        DropdownMenuItem(value: d.id, child: Text("${d.name} (${d.id})"))
-                      ).toList(),
+                      style: fieldTextStyle,
+                      isExpanded: true,
+                      items: List.generate(types.length, (i) =>
+                        DropdownMenuItem(value: i, child: Text(types[i], style: fieldTextStyle))
+                      ),
                       onChanged: (val) {
                         setState(() {
-                          selectedSensorId = val;
-                          selectedSensorInstance = null; 
+                          selectedType = val ?? 0;
                         });
                       },
-                      decoration: InputDecoration(labelText: 'sensor_device'.tr),
+                      decoration: fieldDecoration('switch_type'.tr),
                     ),
-                    
-                    if (selectedSensorId != null) ...[
-                      const SizedBox(height: 10),
+
+                    if (selectedType != 0) ...[
+                      const SizedBox(height: 24),
                       DropdownButtonFormField<int>(
-                        value: selectedSensorInstance,
+                        value: selectedSensorId,
                         dropdownColor: theme.scaffoldBackgroundColor,
-                        style: TextStyle(color: theme.colorScheme.onSurface),
-                        hint: Text('select_instance'.tr, style: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: 0.5))),
-                        items: sensorInstances.map((ins) => 
-                          DropdownMenuItem(value: ins.iadr, child: Text("${'instance'.tr} ${ins.iadr}"))
+                        style: fieldTextStyle,
+                        isExpanded: true,
+                        hint: Text('select_sensor'.tr, style: TextStyle(fontSize: fieldFontSize, color: theme.colorScheme.onSurface.withValues(alpha: 0.5))),
+                        items: sensorDevices.map((d) =>
+                          DropdownMenuItem(value: d.id, child: Text("${d.name} (${d.id})", style: fieldTextStyle))
                         ).toList(),
-                        onChanged: (val) => setState(() => selectedSensorInstance = val),
-                        decoration: InputDecoration(labelText: 'sensor_instance'.tr),
+                        onChanged: (val) {
+                          setState(() {
+                            selectedSensorId = val;
+                            selectedSensorInstance = null;
+                          });
+                        },
+                        decoration: fieldDecoration('sensor_device'.tr),
+                      ),
+
+                      if (selectedSensorId != null) ...[
+                        const SizedBox(height: 24),
+                        DropdownButtonFormField<int>(
+                          value: selectedSensorInstance,
+                          dropdownColor: theme.scaffoldBackgroundColor,
+                          style: fieldTextStyle,
+                          isExpanded: true,
+                          hint: Text('select_instance'.tr, style: TextStyle(fontSize: fieldFontSize, color: theme.colorScheme.onSurface.withValues(alpha: 0.5))),
+                          items: sensorInstances.map((ins) =>
+                            DropdownMenuItem(value: ins.iadr, child: Text("${'instance'.tr} ${ins.iadr}", style: fieldTextStyle))
+                          ).toList(),
+                          onChanged: (val) => setState(() => selectedSensorInstance = val),
+                          decoration: fieldDecoration('sensor_instance'.tr),
+                        ),
+                      ],
+
+                      const SizedBox(height: 24),
+                      DropdownButtonFormField<int>(
+                        value: selectedRelayId,
+                        dropdownColor: theme.scaffoldBackgroundColor,
+                        style: fieldTextStyle,
+                        isExpanded: true,
+                        hint: Text('select_relay'.tr, style: TextStyle(fontSize: fieldFontSize, color: theme.colorScheme.onSurface.withValues(alpha: 0.5))),
+                        items: relayDevices.map((d) =>
+                          DropdownMenuItem(value: d.id, child: Text("${d.name} (${d.id})", style: fieldTextStyle))
+                        ).toList(),
+                        onChanged: (val) {
+                          setState(() {
+                            selectedRelayId = val;
+                          });
+                        },
+                        decoration: fieldDecoration('relay_device'.tr),
                       ),
                     ],
-
-                    const SizedBox(height: 10),
-                    DropdownButtonFormField<int>(
-                      value: selectedRelayId,
-                      dropdownColor: theme.scaffoldBackgroundColor,
-                      style: TextStyle(color: theme.colorScheme.onSurface),
-                      hint: Text('select_relay'.tr, style: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: 0.5))),
-                      items: relayDevices.map((d) => 
-                        DropdownMenuItem(value: d.id, child: Text("${d.name} (${d.id})"))
-                      ).toList(),
-                      onChanged: (val) {
-                        setState(() {
-                          selectedRelayId = val;
-                        });
-                      },
-                      decoration: InputDecoration(labelText: 'relay_device'.tr),
-                    ),
                   ],
-                ],
+                ),
               ),
             ),
+            actionsPadding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
             actions: [
-              TextButton(onPressed: () => Get.back(), child: Text('vazgec'.tr)),
+              TextButton(
+                onPressed: () => Get.back(),
+                child: Text('vazgec'.tr, style: const TextStyle(fontSize: 20)),
+              ),
               ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
                 onPressed: () {
                   if (nameController.text.isEmpty) {
                     Get.snackbar('error'.tr, 'enter_name_error'.tr);
                     return;
                   }
-                  
+
+                  // Sensörün kanalı activeDevices'tan değil, ins_intro kaynaklı
+                  // activeInsIntroList'ten okunmalı — bu sensör gerçek bir DALI
+                  // instance'ı, activeDevices'taki genel 'channel' alanı bu cihaz
+                  // için yanlış/farklı bir değer (ör. 10) taşıyabiliyor.
                   int sensorChannel = 0;
-                  if (selectedSensorId != null) {
-                    final sensor = userManager.activeDevices.firstWhereOrNull((d) => d.id == selectedSensorId);
-                    sensorChannel = sensor?.channel ?? 0;
+                  if (selectedSensorId != null && selectedSensorInstance != null) {
+                    final ins = userManager.activeInsIntroList.firstWhereOrNull(
+                      (i) => i.adr == selectedSensorId && i.iadr == selectedSensorInstance,
+                    );
+                    sensorChannel = ins?.chn ?? 0;
                   }
 
                   int relayChannel = 0;
@@ -1635,7 +1670,7 @@ class DeviceSetupPage extends GetView<DeviceSetupController> {
                   );
                   Get.back();
                 },
-                child: Text('add'.tr),
+                child: Text('add'.tr, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
               ),
             ],
           );

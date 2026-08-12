@@ -59,6 +59,7 @@ class SwitchInfo {
   final int level;
   final int sensorId;
   final int sensorInstance;
+  final int sensorChannel;
   final int relayId;
   final int relayChannel;
   final int room;
@@ -73,6 +74,7 @@ class SwitchInfo {
     required this.level,
     required this.sensorId,
     required this.sensorInstance,
+    required this.sensorChannel,
     required this.relayId,
     required this.relayChannel,
     required this.room,
@@ -88,6 +90,7 @@ class SwitchInfo {
     'level': level,
     'sens_id': sensorId,
     'sens_ins': sensorInstance,
+    'senschn': sensorChannel,
     'rel_id': relayId,
     'rel_chn': relayChannel,
     'room': room,
@@ -103,6 +106,7 @@ class SwitchInfo {
     level: json['level'] is int ? json['level'] : int.parse(json['level']?.toString() ?? '0'),
     sensorId: json['sens_id'] is int ? json['sens_id'] : int.parse(json['sens_id']?.toString() ?? '0'),
     sensorInstance: json['sens_ins'] is int ? json['sens_ins'] : int.parse(json['sens_ins']?.toString() ?? '0'),
+    sensorChannel: json['senschn'] is int ? json['senschn'] : int.parse(json['senschn']?.toString() ?? '0'),
     relayId: json['rel_id'] is int ? json['rel_id'] : int.parse(json['rel_id']?.toString() ?? '0'),
     relayChannel: json['rel_chn'] is int ? json['rel_chn'] : int.parse(json['rel_chn']?.toString() ?? '0'),
     room: json['room'] is int ? json['room'] : int.parse(json['room']?.toString() ?? '0'),

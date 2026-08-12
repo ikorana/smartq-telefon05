@@ -69,7 +69,9 @@ class ThermostatDevice extends BaseDevice {
       name: map['nm'] ?? "",
       type: map['tp'] ?? 3,
       extension: map['ex'] ?? 0,
-      channel: map['rel_chn'] ?? map['pr'] ?? 0,
+      // Sensörün kendi DALI kanalı — 'senschn' (yeni, doğru alan) > 'pr' (genel gear
+      // kanalı, varsa) > 'rel_chn' (eski/yanlış: bu hedef rölenin kanalı, sensörünki değil).
+      channel: map['senschn'] ?? map['pr'] ?? map['rel_chn'] ?? 0,
       ico: map['ico'] ?? 0,
       roomId: map['room'] ?? map['vr'] ?? 255,
       instance: map['sens_ins'] ?? map['in'] ?? 0,
