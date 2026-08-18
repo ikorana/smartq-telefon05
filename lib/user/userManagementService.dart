@@ -365,7 +365,7 @@ class UserManagementService extends GetxService {
       final newItem = InsIntroScn.fromJson(item);
       if (newItem.adr == 0) continue; 
       
-      final index = newList.indexWhere((i) => i.adr == newItem.adr && i.iadr == newItem.iadr);
+      final index = newList.indexWhere((i) => i.adr == newItem.adr && i.iadr == newItem.iadr && i.chn == newItem.chn);
       if (index != -1) {
         newList[index] = newItem;
       } else {
@@ -384,8 +384,11 @@ class UserManagementService extends GetxService {
     
     final int adr = int.tryParse(data['adr']?.toString() ?? '') ?? 0;
     final int insIdx = int.tryParse(data['ins']?.toString() ?? '') ?? 0;
+    final int? kanal = int.tryParse(data['kanal']?.toString() ?? '');
 
-    final index = activeInsIntroList.indexWhere((i) => i.adr == adr && i.iadr == insIdx);
+    final index = activeInsIntroList.indexWhere(
+      (i) => i.adr == adr && i.iadr == insIdx && (kanal == null || i.chn == kanal),
+    );
     if (index != -1) {
       final current = activeInsIntroList[index];
       activeInsIntroList[index] = current.copyWith(
@@ -394,6 +397,7 @@ class UserManagementService extends GetxService {
         cm: int.tryParse(data['cmtype']?.toString() ?? ''),
         cmadr: int.tryParse(data['cmadr']?.toString() ?? ''),
         proc: int.tryParse(data['pro']?.toString() ?? ''),
+        tset: int.tryParse(data['tset']?.toString() ?? ''),
       );
       
       activeUser.value!.insIntro = jsonEncode(activeInsIntroList.map((i) => i.toJson()).toList());

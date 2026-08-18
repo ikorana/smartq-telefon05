@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 
 import '../../comminication/comminicationBadge.dart';
 import '../../devices/base.dart';
+import '../../devices/local_switches_dialog.dart';
 import '../../user/appUser.dart';
 import '../../user/userManagementService.dart';
 import '../userSelection/userSelectionUI.dart';
@@ -322,12 +323,14 @@ class DeviceSetupPage extends GetView<DeviceSetupController> {
         children: [
           _buildMenuButton(context, 'add_room'.tr, Icons.add_business_outlined, () => _showAddRoomDialog(context), false),
           _buildMenuButton(context, 'add_switch'.tr, Icons.add_circle_outline, () => _showAddSwitchDialog(context), false),
-          
+
           _buildMenuButton(context, 'get_rooms'.tr, Icons.list_alt, () => controller.sendGetRoom(), false),
           _buildMenuButton(context, 'get_switches'.tr, Icons.keyboard_alt_outlined, () => controller.getSwitches(), false),
-          
+
           _buildMenuButton(context, 'delete_room'.tr, Icons.delete_forever_outlined, () => _openDeleteRoomSelection(context), false, isWarning: true),
           _buildMenuButton(context, 'delete_switch'.tr, Icons.remove_circle_outline, () => _openDeleteSwitchSelection(context, userManager), false, isWarning: true),
+
+          _buildMenuButton(context, 'Yerel Anahtarlar', Icons.touch_app_outlined, () => showLocalSwitchesDialog(), false),
         ],
       );
     }

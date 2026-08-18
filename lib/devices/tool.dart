@@ -25,7 +25,7 @@ const List<command_type> getprocesstype = <command_type>[
   command_type(8, "Max On/Off (Sens)"),
   command_type(9, "Toggle (Max)"),
   command_type(10, "MxOn/MnOff(Sens)"),
-  command_type(11, "."),
+  command_type(11, "Toggle Dim"),
   command_type(12, "."),
   command_type(13, "."),
   command_type(14, "."),

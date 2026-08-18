@@ -120,7 +120,8 @@ class InsIntroScn {
   final int iadr;
   final int chn;
   final int type;
-  final int act; 
+  final int filter; // Yerel (chn=10) BUTTON tipinde alt-tip: 0=Anahtar (momentary), 1=Switch (maintained)
+  final int act;
   final int proc;
   final int cm;
   final int cmadr;
@@ -134,6 +135,7 @@ class InsIntroScn {
     required this.iadr,
     required this.chn,
     required this.type,
+    this.filter = 0,
     required this.act,
     required this.proc,
     required this.cm,
@@ -149,6 +151,7 @@ class InsIntroScn {
     'iadr': iadr,
     'chn': chn,
     'type': type,
+    'filter': filter,
     'act': act,
     'proc': proc,
     'cm': cm,
@@ -164,6 +167,7 @@ class InsIntroScn {
     iadr: int.tryParse((json['iadr'] ?? json['ins'] ?? '0').toString()) ?? 0,
     chn: int.tryParse(json['chn']?.toString() ?? '0') ?? 0,
     type: int.tryParse(json['type']?.toString() ?? '0') ?? 0,
+    filter: int.tryParse(json['filter']?.toString() ?? '0') ?? 0,
     act: int.tryParse(json['act']?.toString() ?? '0') ?? 0,
     proc: int.tryParse((json['proc'] ?? json['pro'] ?? '0').toString()) ?? 0,
     cm: int.tryParse((json['cm'] ?? json['cmtype'] ?? '0').toString()) ?? 0,
@@ -179,6 +183,7 @@ class InsIntroScn {
     int? iadr,
     int? chn,
     int? type,
+    int? filter,
     int? act,
     int? proc,
     int? cm,
@@ -193,6 +198,7 @@ class InsIntroScn {
       iadr: iadr ?? this.iadr,
       chn: chn ?? this.chn,
       type: type ?? this.type,
+      filter: filter ?? this.filter,
       act: act ?? this.act,
       proc: proc ?? this.proc,
       cm: cm ?? this.cm,

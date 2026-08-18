@@ -16,6 +16,7 @@ import 'package:telefon05/comminication/dataBridgeServis.dart';
 import 'package:telefon05/utils/device_id_helper.dart';
 import 'package:telefon05/utils/fcm_helper.dart';
 import 'package:telefon05/utils/tts_helper.dart';
+import 'package:telefon05/utils/stt_helper.dart';
 import 'initialBinding.dart';
 
 // Global reaktif ekran değişkenleri
@@ -31,9 +32,13 @@ final RxDouble btnHigh = (btnIcoHigh.value + btnTxtHigh.value).obs;
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // 1. GetStorage ve TTS Başlatma
+  // 1. GetStorage, TTS ve STT Başlatma (mikrofon/ses ikonlarının başlangıçta
+  // gösterilip gösterilmeyeceğine karar vermek için burada, uygulama açılır
+  // açılmaz kontrol ediyoruz)
   await GetStorage.init();
   initTTS();
+  await checkTtsAvailability();
+  await SttHelper.initialize();
 
   // 2. Firebase Başlatma
   await Firebase.initializeApp(

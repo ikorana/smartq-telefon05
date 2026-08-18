@@ -45,10 +45,10 @@ class DashboardBottombar extends StatelessWidget {
 
           // POWER BUTONU (Eski Senaryolar Butonu)
           _buildNavItem(
-            context, 
-            Icons.power_settings_new, 
-            'power'.tr, 
-            false, 
+            context,
+            Icons.power_settings_new,
+            'power'.tr,
+            false,
             () => Get.dialog(const PowerActionDialog())
           ),
 

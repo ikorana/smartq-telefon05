@@ -1,7 +1,7 @@
 name: telefon05
 description: "Smart Home Pelephone"
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
-version: 4.0.0+3
+version: 4.0.0+5
 
 environment:
   sdk: ^3.9.2
@@ -55,5 +55,12 @@ flutter:
   assets:
     - assets/images/
     - assets/audio/
+
+dependency_overrides:
+  # path_provider_foundation >=2.5.0 switched to an objective_c FFI/native-assets
+  # implementation that leaks a simulator slice into the release archive, which
+  # Apple rejects (Invalid executable / unsupported platform in the arm64 slice).
+  # Pin to the last version using the old Pigeon-based implementation.
+  path_provider_foundation: 2.4.1
 
 

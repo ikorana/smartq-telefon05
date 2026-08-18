@@ -226,6 +226,22 @@ class RelayDevice extends BaseDevice {
     });
   }
 
+  // İkonun kendisi kutuya gönderilmez (telefonun kendi lokal tercihi) — sadece
+  // seçilen ikon ampul/aydınlatma temalıysa, bu Role cihazının "tüm lambaları aç"
+  // gibi kategori fan-out'una da dahil edilmesi gerektiği bilgisi bildirilir.
+  static const Set<int> _lampThemedIconIndexes = {6, 7, 8, 9, 10, 11, 12}; // lightbulb..tips_and_updates
+
+  void _sendLampOverride(int iconIndex) {
+    final bool isLampThemed = _lampThemedIconIndexes.contains(iconIndex);
+    debugPrint("--- [RELAY] set_lamp_override Komutu Gönderiliyor: Adres $id, val=${isLampThemed ? 1 : 0} ---");
+    _sendToOutbox({
+      "com": "set_lamp_override",
+      "id": id,
+      "kanal": channel,
+      "val": isLampThemed ? 1 : 0,
+    });
+  }
+
   void _sendCommand(int val) {
     if (val == 0) {
       _sendOffCommand();
@@ -1248,6 +1264,7 @@ class RelayDevice extends BaseDevice {
             return InkWell(
               onTap: () {
                 Get.find<UserManagementService>().updateDeviceIcon(id, channel, index);
+                _sendLampOverride(index);
                 Get.back(); Get.back();
                 _showDetailDialog(context);
               },

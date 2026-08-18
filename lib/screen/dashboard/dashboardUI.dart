@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../utils/stt_helper.dart';
 import 'dashboardController.dart';
 import 'widgets/topbar.dart';
 import 'widgets/content.dart';
@@ -33,6 +34,7 @@ class DashboardPage extends GetView<DashboardController> {
           Obx(() {
             final user = controller.activeUser.value;
             if ((user?.ai ?? 1) != 1) return const SizedBox.shrink();
+            if (!SttHelper.isAvailable) return const SizedBox.shrink();
 
             final bool isListening = controller.isListening.value;
             final bool isPreparing = controller.isVoicePreparing.value;

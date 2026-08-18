@@ -20,11 +20,14 @@ void showMotionConfigPopup(int deviceId, int channel, InsIntroScn initialIns) {
     );
   }
 
-  final RxInt status = (getUpdatedIns().act == 1 ? 1 : 0).obs; 
-  final RxInt action = (getUpdatedIns().stat == 255 ? 1 : 0).obs; 
-  final RxInt selectedCommand = getUpdatedIns().cm.obs; 
-  final RxInt selectedProcess = getUpdatedIns().proc.obs; 
-  final RxInt selectedTargetId = getUpdatedIns().cmadr.obs; 
+  final RxInt status = (getUpdatedIns().act == 1 ? 1 : 0).obs;
+  final RxInt action = (getUpdatedIns().stat == 255 ? 1 : 0).obs;
+  final RxInt selectedCommand = getUpdatedIns().cm.obs;
+  final RxInt selectedProcess = getUpdatedIns().proc.obs;
+  final RxInt selectedTargetId = getUpdatedIns().cmadr.obs;
+  // Yerel (kanal=10) hareket sensörlerinde "retrigger" timer süresi (DAKİKA) — tset alanı
+  // üzerinden taşınıyor (termostatlarda kullanılan "hedef sıcaklık" alanının bu tipte karşılığı yok).
+  final RxInt sureDakika = (getUpdatedIns().tset > 0 ? getUpdatedIns().tset : 1).obs;
 
   final worker = ever(userManager.activeInsIntroList, (_) {
     final updated = getUpdatedIns();
@@ -33,6 +36,7 @@ void showMotionConfigPopup(int deviceId, int channel, InsIntroScn initialIns) {
     selectedCommand.value = updated.cm;
     selectedProcess.value = updated.proc;
     selectedTargetId.value = updated.cmadr;
+    if (updated.tset > 0) sureDakika.value = updated.tset;
   });
 
   Get.dialog(
@@ -151,35 +155,77 @@ void showMotionConfigPopup(int deviceId, int channel, InsIntroScn initialIns) {
                 );
               }),
 
-              Obx(() => Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: theme.colorScheme.primary.withOpacity(0.3)),
-                ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<int>(
-                    value: getprocesstype.any((e) => e.id == selectedProcess.value) ? selectedProcess.value : 15,
-                    isExpanded: true,
-                    items: getprocesstype.map((pt) => DropdownMenuItem(
-                      value: pt.id,
-                      child: Text(pt.name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                    )).toList(),
-                    onChanged: (v) => selectedProcess.value = v!,
+              // Aksiyon (process) ve ON/OFF: DALI'de geçerli. Yerelde (kanal=10) davranış
+              // sabit (aç + retrigger timer) — onun yerine timer süresi ayarlanıyor.
+              if (channel != 10) ...[
+                Obx(() => Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: theme.colorScheme.primary.withOpacity(0.3)),
                   ),
-                ),
-              )),
-              
-              const SizedBox(height: 25),
-              
-              Obx(() => Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  buildCompactRadio(1, action.value, "ON", (v) => action.value = v!),
-                  buildCompactRadio(0, action.value, "OFF", (v) => action.value = v!),
-                ],
-              )),
-              const SizedBox(height: 15),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<int>(
+                      value: getprocesstype.any((e) => e.id == selectedProcess.value) ? selectedProcess.value : 15,
+                      isExpanded: true,
+                      items: getprocesstype.map((pt) => DropdownMenuItem(
+                        value: pt.id,
+                        child: Text(pt.name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      )).toList(),
+                      onChanged: (v) => selectedProcess.value = v!,
+                    ),
+                  ),
+                )),
+
+                const SizedBox(height: 25),
+
+                Obx(() => Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    buildCompactRadio(1, action.value, "ON", (v) => action.value = v!),
+                    buildCompactRadio(0, action.value, "OFF", (v) => action.value = v!),
+                  ],
+                )),
+                const SizedBox(height: 15),
+              ] else ...[
+                Obx(() => Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: theme.colorScheme.primary.withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text("Süre (dk)", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.remove_circle_outline),
+                            onPressed: () {
+                              if (sureDakika.value > 1) sureDakika.value -= 1;
+                            },
+                          ),
+                          SizedBox(
+                            width: 36,
+                            child: Text(
+                              "${sureDakika.value}",
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.add_circle_outline),
+                            onPressed: () => sureDakika.value += 1,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                )),
+                const SizedBox(height: 15),
+              ],
             ],
           ),
         ),
@@ -200,20 +246,23 @@ void showMotionConfigPopup(int deviceId, int channel, InsIntroScn initialIns) {
                   "kanal": channel
                 });
               }, iconSize: 40, fontSize: 15),
-              buildBottomIconButton(Icons.filter_alt_outlined, "Filtre", theme.colorScheme.primary, () {
-                 showFilterWindow(Get.context!, instanceLabel, deviceId, initialIns.iadr, channel);
-              }, iconSize: 40, fontSize: 15),
-              buildBottomIconButton(Icons.access_time, "Zaman", Colors.orange, () {
-                 showTimersWindow(Get.context!, instanceLabel, deviceId, initialIns.iadr, channel);
-              }, iconSize: 40, fontSize: 15),
-              buildBottomIconButton(Icons.back_hand_outlined, "C.Hold", Colors.deepPurple, () {
-                sendToOutbox({
-                  "com": "cancel_hold",
-                  "adr": deviceId,
-                  "ins": initialIns.iadr,
-                  "kanal": channel
-                });
-              }, iconSize: 40, fontSize: 15),
+              // Filtre/Zaman/C.Hold: DALI'ye özgü kavramlar, yerel (kanal=10) anahtarlarda karşılığı yok.
+              if (channel != 10) ...[
+                buildBottomIconButton(Icons.filter_alt_outlined, "Filtre", theme.colorScheme.primary, () {
+                   showFilterWindow(Get.context!, instanceLabel, deviceId, initialIns.iadr, channel);
+                }, iconSize: 40, fontSize: 15),
+                buildBottomIconButton(Icons.access_time, "Zaman", Colors.orange, () {
+                   showTimersWindow(Get.context!, instanceLabel, deviceId, initialIns.iadr, channel);
+                }, iconSize: 40, fontSize: 15),
+                buildBottomIconButton(Icons.back_hand_outlined, "C.Hold", Colors.deepPurple, () {
+                  sendToOutbox({
+                    "com": "cancel_hold",
+                    "adr": deviceId,
+                    "ins": initialIns.iadr,
+                    "kanal": channel
+                  });
+                }, iconSize: 40, fontSize: 15),
+              ],
               buildBottomIconButton(Icons.cancel_outlined, "İptal", Colors.red, () {
                 Get.back();
               }, iconSize: 40, fontSize: 15),
@@ -233,12 +282,13 @@ void showMotionConfigPopup(int deviceId, int channel, InsIntroScn initialIns) {
                   "adr": deviceId,
                   "ins": initialIns.iadr,
                   "kanal": channel,
-                  "act": status.value, 
-                  "stat": action.value == 1 ? 255 : 0, 
+                  "act": status.value,
+                  "stat": action.value == 1 ? 255 : 0,
                   "cmtype": selectedCommand.value,
                   "cmadr": selectedTargetId.value,
                   "pro": selectedProcess.value,
                   "ins_kanal": insKanal,
+                  "tset": sureDakika.value,
                 });
                 Get.back();
                 Get.snackbar("Başarılı", "Ayarlar güncellendi.");

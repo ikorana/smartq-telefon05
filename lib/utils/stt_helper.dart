@@ -10,6 +10,9 @@ class SttHelper {
   static String _lastRecognizedWords = "";
   static bool _isResultSent = false;
 
+  /// Uygulama açılışında yapılan initialize() denemesi başarılı oldu mu.
+  static bool get isAvailable => _isInitialized;
+
   /// Ses tanıma motorunu başlatır
   static Future<bool> initialize() async {
     if (_isInitialized) return true;

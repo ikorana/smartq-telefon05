@@ -64,14 +64,17 @@ class DashboardTopbar extends StatelessWidget {
               ),
               Row(
                 children: [
-                  Obx(() => IconButton(
-                    icon: Icon(
-                      radioController.isPlaying.value ? Icons.radio : Icons.radio_outlined,
-                      color: radioController.isPlaying.value ? Colors.blue : theme.colorScheme.onSurface.withValues(alpha: 0.4),
-                    ),
-                    onPressed: () => radioController.togglePlay(),
-                    onLongPress: () => radioController.showRadioDialog(),
-                  )),
+                  Obx(() {
+                    if (!isTtsAvailable.value) return const SizedBox.shrink();
+                    return IconButton(
+                      icon: Icon(
+                        radioController.isPlaying.value ? Icons.radio : Icons.radio_outlined,
+                        color: radioController.isPlaying.value ? Colors.blue : theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                      ),
+                      onPressed: () => radioController.togglePlay(),
+                      onLongPress: () => radioController.showRadioDialog(),
+                    );
+                  }),
                   Obx(() {
                     final weather = weatherService.currentWeather.value;
                     return IconButton(
@@ -82,13 +85,16 @@ class DashboardTopbar extends StatelessWidget {
                       onPressed: () => _showWeatherDialog(context, weatherService),
                     );
                   }),
-                  Obx(() => IconButton(
-                    icon: Icon(
-                      isSoundEnabled.value ? Icons.volume_up : Icons.volume_off,
-                      color: isSoundEnabled.value ? theme.colorScheme.primary : theme.colorScheme.onSurface.withValues(alpha: 0.4),
-                    ),
-                    onPressed: () => toggleSound(),
-                  )),
+                  Obx(() {
+                    if (!isTtsAvailable.value) return const SizedBox.shrink();
+                    return IconButton(
+                      icon: Icon(
+                        isSoundEnabled.value ? Icons.volume_up : Icons.volume_off,
+                        color: isSoundEnabled.value ? theme.colorScheme.primary : theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                      ),
+                      onPressed: () => toggleSound(),
+                    );
+                  }),
                   const ComminicationBadge(),
                 ],
               ),

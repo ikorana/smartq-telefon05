@@ -232,9 +232,9 @@ class _HomeQuickActionsState extends State<HomeQuickActions> {
   }
 
   Widget _buildActionButton(BuildContext context, {
-    required String label, 
-    required IconData icon, 
-    required Color color, 
+    required String label,
+    required IconData icon,
+    required Color color,
     required bool isSelected,
     required VoidCallback onTap
   }) {

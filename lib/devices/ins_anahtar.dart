@@ -57,24 +57,28 @@ void showSwitchConfigPopup(int deviceId, int channel, InsIntroScn initialIns) {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16), // Padding artırıldı
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withOpacity(0.05),
-                  borderRadius: BorderRadius.circular(15),
-                  border: Border.all(color: theme.colorScheme.primary.withOpacity(0.2)),
+              // Yerel (kanal=10) anahtarlarda Aktif/Pasif durumu device.json'daki donanım
+              // atamasından (is_assigned) geliyor — app üzerinden elle değiştirilemez.
+              if (channel != 10) ...[
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16), // Padding artırıldı
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primary.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(15),
+                    border: Border.all(color: theme.colorScheme.primary.withOpacity(0.2)),
+                  ),
+                  child: Obx(() => Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      buildCompactRadio(1, status.value, "Aktif", (v) => status.value = v!),
+                      buildCompactRadio(0, status.value, "Pasif", (v) => status.value = v!),
+                    ],
+                  )),
                 ),
-                child: Obx(() => Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    buildCompactRadio(1, status.value, "Aktif", (v) => status.value = v!),
-                    buildCompactRadio(0, status.value, "Pasif", (v) => status.value = v!),
-                  ],
-                )),
-              ),
-              const SizedBox(height: 25),
-              
+                const SizedBox(height: 25),
+              ],
+
               Obx(() => Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 decoration: BoxDecoration(
@@ -158,35 +162,40 @@ void showSwitchConfigPopup(int deviceId, int channel, InsIntroScn initialIns) {
                 );
               }),
 
-              Obx(() => Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: theme.colorScheme.primary.withOpacity(0.3)),
-                ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<int>(
-                    value: getprocesstype.any((e) => e.id == selectedProcess.value) ? selectedProcess.value : 15,
-                    isExpanded: true,
-                    items: getprocesstype.map((pt) => DropdownMenuItem(
-                      value: pt.id,
-                      child: Text(pt.name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                    )).toList(),
-                    onChanged: (v) => selectedProcess.value = v!,
+              // Aksiyon (process) ve ON/OFF alanları yerel (kanal=10) anahtarlarda kullanılmıyor:
+              // davranış tamamen instance tipine (Anahtar/Switch) göre sabit, process'ten
+              // bağımsız çalışıyor (bkz. firmware trigger_instance). DALI'de ise ikisi de geçerli.
+              if (channel != 10) ...[
+                Obx(() => Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: theme.colorScheme.primary.withOpacity(0.3)),
                   ),
-                ),
-              )),
-              
-              const SizedBox(height: 25),
-              
-              Obx(() => Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  buildCompactRadio(1, action.value, "ON", (v) => action.value = v!),
-                  buildCompactRadio(0, action.value, "OFF", (v) => action.value = v!),
-                ],
-              )),
-              const SizedBox(height: 15),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<int>(
+                      value: getprocesstype.any((e) => e.id == selectedProcess.value) ? selectedProcess.value : 15,
+                      isExpanded: true,
+                      items: getprocesstype.map((pt) => DropdownMenuItem(
+                        value: pt.id,
+                        child: Text(pt.name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      )).toList(),
+                      onChanged: (v) => selectedProcess.value = v!,
+                    ),
+                  ),
+                )),
+
+                const SizedBox(height: 25),
+
+                Obx(() => Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    buildCompactRadio(1, action.value, "ON", (v) => action.value = v!),
+                    buildCompactRadio(0, action.value, "OFF", (v) => action.value = v!),
+                  ],
+                )),
+                const SizedBox(height: 15),
+              ],
             ],
           ),
         ),
@@ -207,12 +216,16 @@ void showSwitchConfigPopup(int deviceId, int channel, InsIntroScn initialIns) {
                   "kanal": channel
                 });
               }, iconSize: 40, fontSize: 15),
-              buildBottomIconButton(Icons.filter_alt_outlined, "Filtre", theme.colorScheme.primary, () {
-                 showFilterWindow(Get.context!, instanceLabel, deviceId, initialIns.iadr, channel);
-              }, iconSize: 40, fontSize: 15),
-              buildBottomIconButton(Icons.access_time, "Zaman", Colors.orange, () {
-                 showTimersWindow(Get.context!, instanceLabel, deviceId, initialIns.iadr, channel);
-              }, iconSize: 40, fontSize: 15),
+              // Filtre/Zaman: DALI'ye özgü kavramlar (event filtresi, sahne zamanlayıcı),
+              // yerel (kanal=10) anahtarlarda karşılığı yok.
+              if (channel != 10) ...[
+                buildBottomIconButton(Icons.filter_alt_outlined, "Filtre", theme.colorScheme.primary, () {
+                   showFilterWindow(Get.context!, instanceLabel, deviceId, initialIns.iadr, channel);
+                }, iconSize: 40, fontSize: 15),
+                buildBottomIconButton(Icons.access_time, "Zaman", Colors.orange, () {
+                   showTimersWindow(Get.context!, instanceLabel, deviceId, initialIns.iadr, channel);
+                }, iconSize: 40, fontSize: 15),
+              ],
               buildBottomIconButton(Icons.cancel_outlined, "İptal", Colors.red, () {
                 Get.back();
               }, iconSize: 40, fontSize: 15),
