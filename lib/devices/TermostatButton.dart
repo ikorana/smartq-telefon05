@@ -292,7 +292,11 @@ class ThermostatDevice extends BaseDevice {
     });
 
     _sendToOutbox({"com": "get_temp", "adres": sensorId, "ins": sensorInstance, "kanal": channel});
-    
+
+    // Dialog genişliği zaten isTablet.value ile Get.width/2'ye ayarlanıyor;
+    // ikon/yazı boyutu için de aynı büyüklük mantığını (iconScale) kullanıyoruz.
+    final double iconScale = isTablet.value ? (Get.width / 2 / 350).clamp(1.0, 1.6) : 1.0;
+
     Get.dialog(
       Dialog(
         backgroundColor: theme.scaffoldBackgroundColor,
@@ -334,8 +338,8 @@ class ThermostatDevice extends BaseDevice {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      _buildTopBarIconBtn(Icons.edit_note, 'rename'.tr, () => _showRenameDialog(context)),
-                      _buildTopBarIconBtn(Icons.meeting_room_outlined, 'change_room'.tr, () => _showRoomSelectionDialog(context)),
+                      _buildTopBarIconBtn(Icons.edit_note, 'rename'.tr, () => _showRenameDialog(context), scale: iconScale),
+                      _buildTopBarIconBtn(Icons.meeting_room_outlined, 'change_room'.tr, () => _showRoomSelectionDialog(context), scale: iconScale),
                     ],
                   ),
                   const Divider(),
@@ -438,7 +442,7 @@ class ThermostatDevice extends BaseDevice {
                       children: [
                         _buildBottomIconWithLabel(Icons.refresh, 'refresh'.tr, () {
                            _sendToOutbox({"com": "get_temp", "adres": sensorId, "ins": sensorInstance, "kanal": channel});
-                        }),
+                        }, scale: iconScale),
                         Obx(() {
                           IconData modeBtnIcon;
                           Color modeBtnColor;
@@ -457,10 +461,11 @@ class ThermostatDevice extends BaseDevice {
                           }
 
                           return _buildBottomIconWithLabel(
-                            modeBtnIcon, 
-                            'mode'.tr, 
+                            modeBtnIcon,
+                            'mode'.tr,
                             () => _showModeSelectionDialog(context),
                             iconColor: modeBtnColor,
+                            scale: iconScale,
                           );
                         }),
                       ],
@@ -480,33 +485,33 @@ class ThermostatDevice extends BaseDevice {
     ).then((_) => worker.dispose());
   }
 
-  Widget _buildTopBarIconBtn(IconData icon, String label, VoidCallback onTap) {
+  Widget _buildTopBarIconBtn(IconData icon, String label, VoidCallback onTap, {double scale = 1.0}) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(8),
       child: Padding(
-        padding: const EdgeInsets.all(4.0),
+        padding: EdgeInsets.all(4.0 * scale),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 22, color: Get.theme.colorScheme.onSurface.withValues(alpha: 0.8)),
-            const SizedBox(height: 4),
-            Text(label, style: TextStyle(fontSize: 8, color: Get.theme.colorScheme.onSurface.withValues(alpha: 0.6))),
+            Icon(icon, size: 23 * scale, color: Get.theme.colorScheme.onSurface.withValues(alpha: 0.8)),
+            SizedBox(height: 4 * scale),
+            Text(label, style: TextStyle(fontSize: 10 * scale, color: Get.theme.colorScheme.onSurface.withValues(alpha: 0.6))),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildBottomIconWithLabel(IconData icon, String label, VoidCallback onTap, {Color? iconColor}) {
+  Widget _buildBottomIconWithLabel(IconData icon, String label, VoidCallback onTap, {Color? iconColor, double scale = 1.0}) {
     return InkWell(
       onTap: onTap,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 24, color: iconColor ?? Get.theme.colorScheme.onSurface.withValues(alpha: 0.7)),
-          const SizedBox(height: 4),
-          Text(label, style: TextStyle(fontSize: 8, color: Get.theme.colorScheme.onSurface.withValues(alpha: 0.7))),
+          Icon(icon, size: 25 * scale, color: iconColor ?? Get.theme.colorScheme.onSurface.withValues(alpha: 0.7)),
+          SizedBox(height: 4 * scale),
+          Text(label, style: TextStyle(fontSize: 10 * scale, color: Get.theme.colorScheme.onSurface.withValues(alpha: 0.7))),
         ],
       ),
     );

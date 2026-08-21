@@ -178,6 +178,16 @@ class BlindDevice extends BaseDevice {
   void _sendDaliGetConfigCommand(String cmd) => _sendToOutbox({"com": cmd, "adres": id, "kanal": channel});
   void _sendDaliConfigCommand(String cmd, int val) => _sendToOutbox({"com": cmd, "adres": id, "kanal": channel, "val": val});
 
+  void _sendSetGroupsCommand(int groupId, int type) {
+    groupLoadingStates[groupId] = true;
+    Future.delayed(const Duration(seconds: 3), () {
+      if (groupLoadingStates.containsKey(groupId)) {
+        groupLoadingStates.remove(groupId);
+      }
+    });
+    _sendToOutbox({"com": "set_gurup", "adres": id, "kanal": channel, "gurup": groupId, "type": type});
+  }
+
   IconData _getIconData(int index) {
     if (index == 11) return Icons.visibility_off;
     if (index >= 0 && index < blindIcons.length) {
@@ -254,7 +264,7 @@ class BlindDevice extends BaseDevice {
         title: Text("${name ?? 'Panjur'} - ${'groups'.tr}"),
         contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 15),
         content: SizedBox(
-          width: 350,
+          width: 455,
           child: Obx(() {
             if (userManager.activeGroups.isEmpty) {
               return Center(child: Text('no_users_found'.tr));
@@ -295,7 +305,7 @@ class BlindDevice extends BaseDevice {
                         if (newVal) groupHigh.value |= (1 << bitPos);
                         else groupHigh.value &= ~(1 << bitPos);
                       }
-                      _sendDaliConfigCommand("set_gurup", (newVal ? 1 : 0)); 
+                      _sendSetGroupsCommand(group.id, newVal ? 1 : 0);
                     },
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -325,6 +335,7 @@ class BlindDevice extends BaseDevice {
                                         if (val) groupHigh.value |= (1 << bitPos);
                                         else groupHigh.value &= ~(1 << bitPos);
                                       }
+                                      _sendSetGroupsCommand(group.id, val ? 1 : 0);
                                     },
                                     visualDensity: VisualDensity.compact,
                                   ),
@@ -333,7 +344,7 @@ class BlindDevice extends BaseDevice {
                             child: Text(
                               group.name,
                               style: TextStyle(
-                                fontSize: 10,
+                                fontSize: 14,
                                 color: isLoading ? theme.colorScheme.primary.withValues(alpha: 0.5) : null,
                               ),
                               maxLines: 1,
@@ -635,7 +646,7 @@ class BlindDevice extends BaseDevice {
         ),
         Row(
           children: [
-            Expanded(child: Obx(() => Slider(value: value.value.toDouble().clamp(minRx?.value.toDouble() ?? 0.0, 254), min: minRx?.value.toDouble() ?? 0.0, max: 254, onChanged: (v) => value.value = v.toInt()))),
+            Expanded(child: Obx(() => Slider(value: value.value.toDouble().clamp((minRx?.value.toDouble() ?? 0.0).clamp(0.0, 254.0), 254), min: (minRx?.value.toDouble() ?? 0.0).clamp(0.0, 254.0), max: 254, onChanged: (v) => value.value = v.toInt()))),
             IconButton(icon: const Icon(Icons.refresh), color: Get.theme.colorScheme.primary.withValues(alpha: 0.6), onPressed: onRefresh),
             IconButton(icon: const Icon(Icons.check_circle_outline), color: Get.theme.colorScheme.primary, onPressed: onApply),
           ],
@@ -845,8 +856,20 @@ class BlindDevice extends BaseDevice {
     RxInt tempLevel = level.value.obs;
     final worker = ever(level, (int val) => tempLevel.value = val);
 
+    // Autosize: dialog genişliği mevcut ekranın bir oranı olarak hesaplanır
+    // (telefon/tablet ayrımı yapmadan), böylece geniş (yatay tablet) ekranlarda
+    // ikon satırları sıkışmadan doğal olarak yayılır, dar (telefon) ekranlarda
+    // önceki davranışa yakın kalır.
+    final double dialogWidth = (scrWidth.value * 0.7).clamp(340.0, 600.0);
+    // İkon/yazı/boşluk ölçeği: dialogWidth'e göre orantılı büyür (350 = telefon
+    // taban genişliği, ölçek 1.0). Tablette (dialogWidth genişledikçe) ikonlar
+    // da büyür, telefonda eski boyutta kalır.
+    final double iconScale = (dialogWidth / 350).clamp(1.0, 1.6);
+    
     Get.dialog(
-      AlertDialog(
+      SizedBox(
+        width: dialogWidth,
+        child: AlertDialog(
         backgroundColor: theme.scaffoldBackgroundColor,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
@@ -864,19 +887,23 @@ class BlindDevice extends BaseDevice {
               ],
             ),
             const SizedBox(height: 15),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _buildTopBarIconBtn(Icons.edit_note, 'rename'.tr, () => _showRenameDialog(context)),
-                _buildTopBarIconBtn(Icons.meeting_room_outlined, 'change_room'.tr, () => _showRoomSelectionDialog(context)),
-                _buildTopBarIconBtn(Icons.visibility_off_outlined, 'gizle'.tr, () => _hideDevice(context)),
-                _buildTopBarIconBtn(Icons.settings_remote, 'get_switches'.tr, () => _showSwitchSelectionDialog()),
-              ],
+            SizedBox(
+              width: dialogWidth - 40,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _buildTopBarIconBtn(Icons.edit_note, 'rename'.tr, () => _showRenameDialog(context), scale: iconScale),
+                  _buildTopBarIconBtn(Icons.meeting_room_outlined, 'change_room'.tr, () => _showRoomSelectionDialog(context), scale: iconScale),
+                  _buildTopBarIconBtn(Icons.visibility_off_outlined, 'gizle'.tr, () => _hideDevice(context), scale: iconScale),
+                  _buildTopBarIconBtn(Icons.settings_remote, 'get_switches'.tr, () => _showSwitchSelectionDialog(), scale: iconScale),
+                ],
+              ),
             ),
             const Divider(),
           ],
         ),
-        content: Column(
+        content: SingleChildScrollView(
+          child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             // --- ODA VE ANAHTAR BİLGİSİ ---
@@ -934,15 +961,18 @@ class BlindDevice extends BaseDevice {
               ],
             )),
             const SizedBox(height: 10),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 10,
+              runSpacing: 10,
               children: [
                 _buildActionBtn(Icons.arrow_upward, 'open'.tr, () => _sendAction(3), color: Colors.green),
-                _buildActionBtn(Icons.stop, 'close'.tr, () => _sendAction(0), color: Colors.red), // 'stop' yerine geçici 'close' tr
+                _buildActionBtn(Icons.stop, 'stop'.tr, () => _sendAction(0), color: Colors.red),
                 _buildActionBtn(Icons.arrow_downward, 'close'.tr, () => _sendAction(2), color: Colors.blue),
               ],
             ),
           ],
+          ),
         ),
         actionsPadding: EdgeInsets.zero,
         actions: [
@@ -952,15 +982,18 @@ class BlindDevice extends BaseDevice {
               const Divider(height: 1),
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _buildBottomIconWithLabel(Icons.refresh, 'get_level'.tr, () => _sendToOutbox({"com": "get_level", "adres": id, "kanal": channel})),
-                    _buildBottomIconWithLabel(Icons.info_outline, 'status'.tr, () { _showStatusDialog(); _sendQStatusCommand(); }),
-                    _buildBottomIconWithLabel(Icons.list_alt, 'details'.tr, () => _showBlindDetailsPopup()),
-                    _buildBottomIconWithLabel(Icons.groups, 'groups'.tr, () { _showGroupsDialog(); _sendGetGroupsCommand(); }),
-                    _buildBottomIconWithLabel(Icons.auto_awesome, 'scenarios'.tr, () => _showScenariosDialog()),
-                  ],
+                child: SizedBox(
+                  width: dialogWidth,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _buildBottomIconWithLabel(Icons.refresh, 'get_level'.tr, () => _sendToOutbox({"com": "get_level", "adres": id, "kanal": channel}), scale: iconScale),
+                      _buildBottomIconWithLabel(Icons.info_outline, 'status'.tr, () { _showStatusDialog(); _sendQStatusCommand(); }, scale: iconScale),
+                      _buildBottomIconWithLabel(Icons.list_alt, 'details'.tr, () => _showBlindDetailsPopup(), scale: iconScale),
+                      _buildBottomIconWithLabel(Icons.groups, 'groups'.tr, () { _showGroupsDialog(); _sendGetGroupsCommand(); }, scale: iconScale),
+                      _buildBottomIconWithLabel(Icons.auto_awesome, 'scenarios'.tr, () => _showScenariosDialog(), scale: iconScale),
+                    ],
+                  ),
                 ),
               ),
               const Divider(height: 1),
@@ -969,6 +1002,7 @@ class BlindDevice extends BaseDevice {
             ],
           ),
         ],
+        ),
       ),
     ).then((_) => worker.dispose());
   }
@@ -988,10 +1022,10 @@ class BlindDevice extends BaseDevice {
           const SizedBox(width: 4),
           Text(
             label,
-            style: TextStyle(
-              fontSize: 10,
+            style: const TextStyle(
+              fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: theme.colorScheme.primary.withValues(alpha: 0.8),
+              color: Colors.white,
             ),
           ),
         ],
@@ -999,51 +1033,54 @@ class BlindDevice extends BaseDevice {
     );
   }
 
-  Widget _buildTopBarIconBtn(IconData icon, String label, VoidCallback onTap) {
+  Widget _buildTopBarIconBtn(IconData icon, String label, VoidCallback onTap, {double scale = 1.0}) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(8),
       child: Padding(
-        padding: const EdgeInsets.all(4.0),
+        padding: EdgeInsets.all(4.0 * scale),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 22, color: Get.theme.colorScheme.onSurface.withValues(alpha: 0.8)),
-            const SizedBox(height: 4),
-            Text(label, style: TextStyle(fontSize: 8, color: Get.theme.colorScheme.onSurface.withValues(alpha: 0.6))),
+            Icon(icon, size: 23 * scale, color: Get.theme.colorScheme.onSurface.withValues(alpha: 0.8)),
+            SizedBox(height: 4 * scale),
+            Text(label, style: TextStyle(fontSize: 10 * scale, color: Get.theme.colorScheme.onSurface.withValues(alpha: 0.6))),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildBottomIconWithLabel(IconData icon, String label, VoidCallback onTap) {
+  Widget _buildBottomIconWithLabel(IconData icon, String label, VoidCallback onTap, {double scale = 1.0}) {
     return InkWell(
       onTap: onTap,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 24, color: Get.theme.colorScheme.onSurface.withValues(alpha: 0.7)),
-          const SizedBox(height: 4),
-          Text(label, style: TextStyle(fontSize: 8, color: Get.theme.colorScheme.onSurface.withValues(alpha: 0.7))),
+          Icon(icon, size: 25 * scale, color: Get.theme.colorScheme.onSurface.withValues(alpha: 0.7)),
+          SizedBox(height: 4 * scale),
+          Text(label, style: TextStyle(fontSize: 10 * scale, color: Get.theme.colorScheme.onSurface.withValues(alpha: 0.7))),
         ],
       ),
     );
   }
 
+  // Aç/Dur/Kapat butonları: dialogWidth büyüse de sabit kalır (telefon/tablet
+  // aynı boyut) — kullanıcı isteğiyle scale'e bağlanmadı.
   Widget _buildActionBtn(IconData icon, String label, VoidCallback onTap, {Color? color}) {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
         backgroundColor: Get.theme.colorScheme.surface,
         foregroundColor: color ?? Get.theme.colorScheme.primary,
         elevation: 1,
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
+        minimumSize: const Size(114, 0),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10), side: BorderSide(color: Colors.grey.withValues(alpha: 0.3))),
       ),
       onPressed: onTap,
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        children: [Icon(icon, size: 20), const SizedBox(height: 4), Text(label, style: const TextStyle(fontSize: 9))],
+        children: [Icon(icon, size: 26), const SizedBox(height: 5), Text(label, style: const TextStyle(fontSize: 14))],
       ),
     );
   }

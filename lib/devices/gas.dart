@@ -379,7 +379,7 @@ class GasDevice extends BaseDevice {
         title: Text("${name ?? 'gas'.tr} - ${'groups'.tr}"),
         contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 15),
         content: SizedBox(
-          width: 350,
+          width: 455,
           child: Obx(() {
             if (userManager.activeGroups.isEmpty) return Center(child: Text('no_users_found'.tr));
             return GridView.builder(
@@ -410,7 +410,7 @@ class GasDevice extends BaseDevice {
                             else { int bitPos = group.id - 8; if (val) groupHigh.value |= (1 << bitPos); else groupHigh.value &= ~(1 << bitPos); }
                             _sendSetGroupsCommand(group.id, val ? 1 : 0);
                           }, visualDensity: VisualDensity.compact)),
-                          Expanded(child: Text(group.name, style: TextStyle(fontSize: 10, color: isLoading ? theme.colorScheme.primary.withOpacity(0.5) : null), maxLines: 1, overflow: TextOverflow.ellipsis)),
+                          Expanded(child: Text(group.name, style: TextStyle(fontSize: 14, color: isLoading ? theme.colorScheme.primary.withOpacity(0.5) : null), maxLines: 1, overflow: TextOverflow.ellipsis)),
                         ],
                       ),
                     ),
@@ -613,7 +613,7 @@ class GasDevice extends BaseDevice {
         Padding(padding: const EdgeInsets.only(left: 8.0, top: 8.0), child: Row(children: [Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)), const SizedBox(width: 8), Obx(() => Text("(${value.value})", style: TextStyle(fontSize: 11, color: Get.theme.colorScheme.primary.withOpacity(0.7))))])),
         Row(
           children: [
-            Expanded(child: Obx(() { double minVal = minRx?.value.toDouble() ?? 0.0; return Slider(value: value.value.toDouble().clamp(minVal, 254), min: minVal, max: 254, onChanged: (v) => value.value = v.toInt()); })),
+            Expanded(child: Obx(() { double minVal = (minRx?.value.toDouble() ?? 0.0).clamp(0.0, 254.0); return Slider(value: value.value.toDouble().clamp(minVal, 254), min: minVal, max: 254, onChanged: (v) => value.value = v.toInt()); })),
             IconButton(icon: const Icon(Icons.refresh), color: Get.theme.colorScheme.primary.withOpacity(0.6), onPressed: onRefresh),
             IconButton(icon: const Icon(Icons.check_circle_outline), color: Get.theme.colorScheme.primary, onPressed: onApply),
           ],
@@ -629,8 +629,13 @@ class GasDevice extends BaseDevice {
     RxInt tempLevel = level.value.obs;
     final worker = ever(level, (int val) => tempLevel.value = val);
 
+    final double dialogWidth = (scrWidth.value * 0.7).clamp(340.0, 600.0);
+    final double iconScale = (dialogWidth / 350).clamp(1.0, 1.6);
+
     Get.dialog(
-      AlertDialog(
+      SizedBox(
+        width: dialogWidth,
+        child: AlertDialog(
         backgroundColor: theme.scaffoldBackgroundColor,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
@@ -644,18 +649,22 @@ class GasDevice extends BaseDevice {
               ],
             ),
             const SizedBox(height: 15),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _buildTopBarIconBtn(Icons.edit_note, 'rename'.tr, () => _showRenameDialog(context)),
-                _buildTopBarIconBtn(Icons.meeting_room_outlined, 'change_room'.tr, () => _showRoomSelectionDialog(context)),
-               // _buildTopBarIconBtn(Icons.settings_remote, 'get_switches'.tr, () => _showSwitchSelectionDialog()),
-              ],
+            SizedBox(
+              width: dialogWidth - 40,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _buildTopBarIconBtn(Icons.edit_note, 'rename'.tr, () => _showRenameDialog(context), scale: iconScale),
+                  _buildTopBarIconBtn(Icons.meeting_room_outlined, 'change_room'.tr, () => _showRoomSelectionDialog(context), scale: iconScale),
+                 // _buildTopBarIconBtn(Icons.settings_remote, 'get_switches'.tr, () => _showSwitchSelectionDialog()),
+                ],
+              ),
             ),
             const Divider(),
           ],
         ),
-        content: Column(
+        content: SingleChildScrollView(
+          child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Padding(
@@ -683,6 +692,7 @@ class GasDevice extends BaseDevice {
               ],
             ),
           ],
+          ),
         ),
         actionsPadding: EdgeInsets.zero,
         actions: [
@@ -692,15 +702,18 @@ class GasDevice extends BaseDevice {
               const Divider(height: 1),
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _buildBottomIconWithLabel(Icons.refresh, 'get_level'.tr, () => _sendGetLevelCommand()),
-                    _buildBottomIconWithLabel(Icons.info_outline, 'status'.tr, () { _showStatusDialog(); _sendQStatusCommand(); }),
-                    _buildBottomIconWithLabel(Icons.list_alt, 'details'.tr, () => _showGasDetailsPopup()),
-                    _buildBottomIconWithLabel(Icons.groups, 'groups'.tr, () { _showGroupsDialog(); _sendGetGroupsCommand(); }),
-                    _buildBottomIconWithLabel(Icons.auto_awesome, 'scenarios'.tr, () => _showScenariosDialog()),
-                  ],
+                child: SizedBox(
+                  width: dialogWidth,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _buildBottomIconWithLabel(Icons.refresh, 'get_level'.tr, () => _sendGetLevelCommand(), scale: iconScale),
+                      _buildBottomIconWithLabel(Icons.info_outline, 'status'.tr, () { _showStatusDialog(); _sendQStatusCommand(); }, scale: iconScale),
+                      _buildBottomIconWithLabel(Icons.list_alt, 'details'.tr, () => _showGasDetailsPopup(), scale: iconScale),
+                      _buildBottomIconWithLabel(Icons.groups, 'groups'.tr, () { _showGroupsDialog(); _sendGetGroupsCommand(); }, scale: iconScale),
+                      _buildBottomIconWithLabel(Icons.auto_awesome, 'scenarios'.tr, () => _showScenariosDialog(), scale: iconScale),
+                    ],
+                  ),
                 ),
               ),
               const Divider(height: 1),
@@ -709,6 +722,7 @@ class GasDevice extends BaseDevice {
             ],
           ),
         ],
+        ),
       ),
     ).then((_) => worker.dispose());
   }
@@ -717,16 +731,16 @@ class GasDevice extends BaseDevice {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(color: theme.colorScheme.primary.withOpacity(0.05), borderRadius: BorderRadius.circular(12), border: Border.all(color: theme.colorScheme.primary.withOpacity(0.1))),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(icon, size: 14, color: theme.colorScheme.primary.withOpacity(0.6)), const SizedBox(width: 4), Text(label, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: theme.colorScheme.primary.withOpacity(0.8)))]),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(icon, size: 14, color: theme.colorScheme.primary.withOpacity(0.6)), const SizedBox(width: 4), Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white))]),
     );
   }
 
-  Widget _buildTopBarIconBtn(IconData icon, String label, VoidCallback onTap) {
-    return InkWell(onTap: onTap, borderRadius: BorderRadius.circular(8), child: Padding(padding: const EdgeInsets.all(4.0), child: Column(mainAxisSize: MainAxisSize.min, children: [Icon(icon, size: 22, color: Get.theme.colorScheme.onSurface.withOpacity(0.8)), const SizedBox(height: 4), Text(label, style: TextStyle(fontSize: 8, color: Get.theme.colorScheme.onSurface.withOpacity(0.6)))])));
+  Widget _buildTopBarIconBtn(IconData icon, String label, VoidCallback onTap, {double scale = 1.0}) {
+    return InkWell(onTap: onTap, borderRadius: BorderRadius.circular(8), child: Padding(padding: EdgeInsets.all(4.0 * scale), child: Column(mainAxisSize: MainAxisSize.min, children: [Icon(icon, size: 23 * scale, color: Get.theme.colorScheme.onSurface.withOpacity(0.8)), SizedBox(height: 4 * scale), Text(label, style: TextStyle(fontSize: 10 * scale, color: Get.theme.colorScheme.onSurface.withOpacity(0.6)))])));
   }
 
-  Widget _buildBottomIconWithLabel(IconData icon, String label, VoidCallback onTap) {
-    return InkWell(onTap: onTap, child: Column(mainAxisSize: MainAxisSize.min, children: [Icon(icon, size: 24, color: Get.theme.colorScheme.onSurface.withOpacity(0.7)), const SizedBox(height: 4), Text(label, style: TextStyle(fontSize: 8, color: Get.theme.colorScheme.onSurface.withOpacity(0.7)))]));
+  Widget _buildBottomIconWithLabel(IconData icon, String label, VoidCallback onTap, {double scale = 1.0}) {
+    return InkWell(onTap: onTap, child: Column(mainAxisSize: MainAxisSize.min, children: [Icon(icon, size: 25 * scale, color: Get.theme.colorScheme.onSurface.withOpacity(0.7)), SizedBox(height: 4 * scale), Text(label, style: TextStyle(fontSize: 10 * scale, color: Get.theme.colorScheme.onSurface.withOpacity(0.7)))]));
   }
 
   Widget _buildActionBtn(IconData icon, String label, VoidCallback onTap, {Color? color, double widthMultiplier = 1.0}) {

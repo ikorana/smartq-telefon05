@@ -1,0 +1,15 @@
+Merhaba,
+
+Guideline 4 - Design kapsamında bildirdiğiniz "iPad için optimize edilmemiş" geri bildiriminiz için teşekkür ederiz. Sorunun kaynağını inceledik: cihaz kontrol popup'ları (lamba, röle, panjur, kapı vb. detay ekranları) sabit genişlikte tasarlanmıştı ve iPad'in geniş ekranında sıkışık/orantısız görünüyordu.
+
+Bu sürümde şu düzeltmeleri yaptık:
+
+- Tüm cihaz detay popup'ları artık ekran genişliğine göre otomatik boyutlanıyor (autosize); iPad'de daha geniş ve ferah, iPhone'da kompakt görünüyor.
+- Popup içindeki ikon, buton ve yazı tipi boyutları da ekran boyutuna göre orantılı ölçekleniyor.
+- Uygulama açılışta cihaz tipine göre yön kilitleniyor: iPhone dikey (portrait), iPad yatay (landscape) — böylece arayüz her zaman tasarlandığı yönde açılıyor.
+- Test sırasında bazı popup'larda ortaya çıkan taşma (overflow) hatalarını giderdik; gerektiğinde içerik kaydırılabilir hale getirildi.
+
+Ekli ekran görüntüleri güncellenmiş iPad arayüzünü göstermektedir. Değerlendirmeniz için teşekkür ederiz.
+
+Saygılarımızla,
+SmartQ Home Ekibi

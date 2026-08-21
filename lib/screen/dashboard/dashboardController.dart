@@ -33,9 +33,11 @@ class DashboardController extends GetxController {
   StreamSubscription? _refreshSubscription;
   Timer? _refreshTimeoutTimer;
 
-  final activeMode = 0.obs; 
-  final alarmState = 2.obs; 
+  final activeMode = 0.obs;
+  final alarmState = 2.obs;
   final isIrrigationRunning = false.obs;
+  final hasIrrigationModule = false.obs;
+  final hasLightingModule = false.obs;
   StreamSubscription? _dataSubscription;
 
   // Sesli Komut Değişkenleri
@@ -187,6 +189,12 @@ class DashboardController extends GetxController {
             isIrrigationRunning.value = running == 1;
           }
         }
+        else if (com == 'get_version') {
+          final int? sulama = int.tryParse(payload['sulama']?.toString() ?? '');
+          if (sulama != null) hasIrrigationModule.value = sulama == 1;
+          final int? aydinlatma = int.tryParse(payload['aydinlatma']?.toString() ?? '');
+          if (aydinlatma != null) hasLightingModule.value = aydinlatma == 1;
+        }
       }
     });
   }
@@ -209,6 +217,10 @@ class DashboardController extends GetxController {
 
   void getIrrigationStatus() {
     _sendToOutbox({"com": "get_irrigation"});
+  }
+
+  void getBoxVersion() {
+    _sendToOutbox({"com": "get_version", "type": 2});
   }
 
   void setSystemMode(int mode, {int? alarm}) {

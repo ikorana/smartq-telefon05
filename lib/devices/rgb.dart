@@ -224,7 +224,7 @@ class RGBDevice extends BaseDevice {
     _isGroupsDialogOpen = true;
     final userManager = Get.find<UserManagementService>();
     final theme = Get.theme;
-    Get.dialog(AlertDialog(title: Text("${name ?? 'RGB Device'} - ${'groups'.tr}"), contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 15), content: SizedBox(width: 350, child: Obx(() { if (userManager.activeGroups.isEmpty) return Center(child: Text('no_users_found'.tr)); return GridView.builder(shrinkWrap: true, physics: const NeverScrollableScrollPhysics(), gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, childAspectRatio: 3.2, crossAxisSpacing: 5, mainAxisSpacing: 5), itemCount: userManager.activeGroups.length, itemBuilder: (context, index) { final group = userManager.activeGroups[index]; return Obx(() { bool isSelected = group.id < 8 ? (groupLow.value & (1 << group.id)) != 0 : (groupHigh.value & (1 << (group.id - 8))) != 0; bool isLoading = groupLoadingStates[group.id] ?? false; return InkWell(onTap: isLoading ? null : () { bool newVal = !isSelected; if (group.id < 8) { if (newVal) groupLow.value |= (1 << group.id); else groupLow.value &= ~(1 << group.id); } else { int bitPos = group.id - 8; if (newVal) groupHigh.value |= (1 << bitPos); else groupHigh.value &= ~(1 << bitPos); } _sendSetGroupsCommand(group.id, newVal ? 1 : 0); }, child: Container(padding: const EdgeInsets.symmetric(horizontal: 4), decoration: BoxDecoration(borderRadius: BorderRadius.circular(8), color: isLoading ? theme.colorScheme.primary.withValues(alpha: 0.05) : null), child: Row(children: [SizedBox(width: 32, height: 32, child: isLoading ? const Padding(padding: EdgeInsets.all(8.0), child: CircularProgressIndicator(strokeWidth: 2)) : Checkbox(value: isSelected, onChanged: (bool? val) { if (val == null) return; if (group.id < 8) { if (val) groupLow.value |= (1 << group.id); else groupLow.value &= ~(1 << group.id); } else { int bitPos = group.id - 8; if (val) groupHigh.value |= (1 << bitPos); else groupHigh.value &= ~(1 << bitPos); } _sendSetGroupsCommand(group.id, val ? 1 : 0); }, visualDensity: VisualDensity.compact)), Expanded(child: Text(group.name, style: TextStyle(fontSize: 10, color: isLoading ? theme.colorScheme.primary.withValues(alpha: 0.5) : null), maxLines: 1, overflow: TextOverflow.ellipsis))]))); }); }); })), actions: [TextButton(onPressed: () => _sendGetGroupsCommand(), child: const Text("REFRESH")), TextButton(onPressed: () => Get.back(), child: Text("CLOSE", style: TextStyle(color: theme.colorScheme.primary)))])).then((_) { _isGroupsDialogOpen = false; groupLoadingStates.clear(); });
+    Get.dialog(AlertDialog(title: Text("${name ?? 'RGB Device'} - ${'groups'.tr}"), contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 15), content: SizedBox(width: 455, child: Obx(() { if (userManager.activeGroups.isEmpty) return Center(child: Text('no_users_found'.tr)); return GridView.builder(shrinkWrap: true, physics: const NeverScrollableScrollPhysics(), gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, childAspectRatio: 3.2, crossAxisSpacing: 5, mainAxisSpacing: 5), itemCount: userManager.activeGroups.length, itemBuilder: (context, index) { final group = userManager.activeGroups[index]; return Obx(() { bool isSelected = group.id < 8 ? (groupLow.value & (1 << group.id)) != 0 : (groupHigh.value & (1 << (group.id - 8))) != 0; bool isLoading = groupLoadingStates[group.id] ?? false; return InkWell(onTap: isLoading ? null : () { bool newVal = !isSelected; if (group.id < 8) { if (newVal) groupLow.value |= (1 << group.id); else groupLow.value &= ~(1 << group.id); } else { int bitPos = group.id - 8; if (newVal) groupHigh.value |= (1 << bitPos); else groupHigh.value &= ~(1 << bitPos); } _sendSetGroupsCommand(group.id, newVal ? 1 : 0); }, child: Container(padding: const EdgeInsets.symmetric(horizontal: 4), decoration: BoxDecoration(borderRadius: BorderRadius.circular(8), color: isLoading ? theme.colorScheme.primary.withValues(alpha: 0.05) : null), child: Row(children: [SizedBox(width: 32, height: 32, child: isLoading ? const Padding(padding: EdgeInsets.all(8.0), child: CircularProgressIndicator(strokeWidth: 2)) : Checkbox(value: isSelected, onChanged: (bool? val) { if (val == null) return; if (group.id < 8) { if (val) groupLow.value |= (1 << group.id); else groupLow.value &= ~(1 << group.id); } else { int bitPos = group.id - 8; if (val) groupHigh.value |= (1 << bitPos); else groupHigh.value &= ~(1 << bitPos); } _sendSetGroupsCommand(group.id, val ? 1 : 0); }, visualDensity: VisualDensity.compact)), Expanded(child: Text(group.name, style: TextStyle(fontSize: 14, color: isLoading ? theme.colorScheme.primary.withValues(alpha: 0.5) : null), maxLines: 1, overflow: TextOverflow.ellipsis))]))); }); }); })), actions: [TextButton(onPressed: () => _sendGetGroupsCommand(), child: const Text("REFRESH")), TextButton(onPressed: () => Get.back(), child: Text("CLOSE", style: TextStyle(color: theme.colorScheme.primary)))])).then((_) { _isGroupsDialogOpen = false; groupLoadingStates.clear(); });
   }
 
   void _showScenariosDialog() {
@@ -288,7 +288,7 @@ class RGBDevice extends BaseDevice {
   }
 
   Widget _buildConfigSlider({required String label, required RxInt value, required VoidCallback onApply, required VoidCallback onRefresh, RxInt? minRx}) {
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Padding(padding: const EdgeInsets.only(left: 8.0, top: 8.0), child: Row(children: [Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)), const SizedBox(width: 8), Obx(() => Text("(${value.value})", style: TextStyle(fontSize: 11, color: Get.theme.colorScheme.primary.withValues(alpha: 0.7))))])), Row(children: [Expanded(child: Obx(() { double minVal = minRx?.value.toDouble() ?? 0.0; return Slider(value: value.value.toDouble().clamp(minVal, 254), min: minVal, max: 254, onChanged: (v) => value.value = v.toInt()); })), IconButton(icon: const Icon(Icons.refresh), color: Get.theme.colorScheme.primary.withValues(alpha: 0.6), onPressed: onRefresh), IconButton(icon: const Icon(Icons.check_circle_outline), color: Get.theme.colorScheme.primary, onPressed: onApply)]), const Divider()]);
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Padding(padding: const EdgeInsets.only(left: 8.0, top: 8.0), child: Row(children: [Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)), const SizedBox(width: 8), Obx(() => Text("(${value.value})", style: TextStyle(fontSize: 11, color: Get.theme.colorScheme.primary.withValues(alpha: 0.7))))])), Row(children: [Expanded(child: Obx(() { double minVal = (minRx?.value.toDouble() ?? 0.0).clamp(0.0, 254.0); return Slider(value: value.value.toDouble().clamp(minVal, 254), min: minVal, max: 254, onChanged: (v) => value.value = v.toInt()); })), IconButton(icon: const Icon(Icons.refresh), color: Get.theme.colorScheme.primary.withValues(alpha: 0.6), onPressed: onRefresh), IconButton(icon: const Icon(Icons.check_circle_outline), color: Get.theme.colorScheme.primary, onPressed: onApply)]), const Divider()]);
   }
 
   void _showColorPickerDialog(BuildContext context) {
@@ -355,7 +355,9 @@ class RGBDevice extends BaseDevice {
     final theme = Theme.of(context);
     RxInt tempLevel = level.value.obs;
     final worker = ever(level, (int val) => tempLevel.value = val);
-    Get.dialog(AlertDialog(
+    final double dialogWidth = (scrWidth.value * 0.7).clamp(340.0, 600.0);
+    final double iconScale = (dialogWidth / 350).clamp(1.0, 1.6);
+    Get.dialog(SizedBox(width: dialogWidth, child: AlertDialog(
       backgroundColor: theme.scaffoldBackgroundColor,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
@@ -366,15 +368,15 @@ class RGBDevice extends BaseDevice {
           Expanded(child: Obx(() => Text(name ?? 'RGB Device', style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 18, fontWeight: FontWeight.bold)))),
         ]),
         const SizedBox(height: 15),
-        Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-          _buildTopBarIconBtn(Icons.edit_note, 'rename'.tr, () => _showRenameDialog(context)),
-          _buildTopBarIconBtn(Icons.meeting_room_outlined, 'change_room'.tr, () => _showRoomSelectionDialog(context)),
-          _buildTopBarIconBtn(Icons.visibility_off_outlined, 'gizle'.tr, () => _hideDevice(context)),
-          _buildTopBarIconBtn(Icons.settings_remote, 'get_switches'.tr, () => _showSwitchSelectionDialog()),
-        ]),
+        SizedBox(width: dialogWidth - 40, child: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+          _buildTopBarIconBtn(Icons.edit_note, 'rename'.tr, () => _showRenameDialog(context), scale: iconScale),
+          _buildTopBarIconBtn(Icons.meeting_room_outlined, 'change_room'.tr, () => _showRoomSelectionDialog(context), scale: iconScale),
+          _buildTopBarIconBtn(Icons.visibility_off_outlined, 'gizle'.tr, () => _hideDevice(context), scale: iconScale),
+          _buildTopBarIconBtn(Icons.settings_remote, 'get_switches'.tr, () => _showSwitchSelectionDialog(), scale: iconScale),
+        ])),
         const Divider(),
       ]),
-      content: Column(mainAxisSize: MainAxisSize.min, children: [
+      content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
         Obx(() {
           if (tempLevel.value == 0) return InkWell(onTap: () => _changeIcon(context), borderRadius: BorderRadius.circular(40), child: Icon(_getIconData(ico), size: 60, color: theme.colorScheme.onSurface.withValues(alpha: 0.2)));
           Color iconColor = Color.fromARGB(255, red.value, green.value, blue.value);
@@ -395,36 +397,37 @@ class RGBDevice extends BaseDevice {
           _buildActionBtn(Icons.fingerprint, 'identity'.tr, () => _sendIdentifyCommand()),
           _buildActionBtn(Icons.color_lens, 'renk'.tr, () => _showColorPickerDialog(context)),
         ]),
-      ]),
+      ])),
       actionsPadding: EdgeInsets.zero,
       actions: [
         Column(mainAxisSize: MainAxisSize.min, children: [
           const Divider(height: 1),
-          Padding(padding: const EdgeInsets.symmetric(vertical: 8), child: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-            _buildBottomIconWithLabel(Icons.refresh, 'get_level'.tr, () => _sendGetLevelCommand()),
-            _buildBottomIconWithLabel(Icons.info_outline, 'status'.tr, () { _showStatusDialog(); _sendQStatusCommand(); }),
-            _buildBottomIconWithLabel(Icons.list_alt, 'details'.tr, () => _showLampDetailsPopup()),
-            _buildBottomIconWithLabel(Icons.groups, 'groups'.tr, () { _showGroupsDialog(); _sendGetGroupsCommand(); }),
-            _buildBottomIconWithLabel(Icons.auto_awesome, 'scenarios'.tr, () => _showScenariosDialog()),
-          ])),
+          Padding(padding: const EdgeInsets.symmetric(vertical: 8), child: SizedBox(width: dialogWidth, child: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+            _buildBottomIconWithLabel(Icons.refresh, 'get_level'.tr, () => _sendGetLevelCommand(), scale: iconScale),
+            _buildBottomIconWithLabel(Icons.info_outline, 'status'.tr, () { _showStatusDialog(); _sendQStatusCommand(); }, scale: iconScale),
+            _buildBottomIconWithLabel(Icons.list_alt, 'details'.tr, () => _showLampDetailsPopup(), scale: iconScale),
+            _buildBottomIconWithLabel(Icons.groups, 'groups'.tr, () { _showGroupsDialog(); _sendGetGroupsCommand(); }, scale: iconScale),
+            _buildBottomIconWithLabel(Icons.auto_awesome, 'scenarios'.tr, () => _showScenariosDialog(), scale: iconScale),
+          ]))),
           const Divider(height: 1),
           TextButton(onPressed: () => Get.back(), child: Text("close".tr, style: TextStyle(color: theme.colorScheme.primary))),
           const SizedBox(height: 4),
         ]),
       ],
-    )).then((_) => worker.dispose());
+    ))).then((_) => worker.dispose());
   }
 
-  Widget _buildTopBarIconBtn(IconData icon, String label, VoidCallback onTap) {
-    return InkWell(onTap: onTap, borderRadius: BorderRadius.circular(8), child: Padding(padding: const EdgeInsets.all(4.0), child: Column(mainAxisSize: MainAxisSize.min, children: [Icon(icon, size: 22, color: Get.theme.colorScheme.onSurface.withValues(alpha: 0.8)), const SizedBox(height: 4), Text(label, style: TextStyle(fontSize: 8, color: Get.theme.colorScheme.onSurface.withValues(alpha: 0.6)))])));
+  Widget _buildTopBarIconBtn(IconData icon, String label, VoidCallback onTap, {double scale = 1.0}) {
+    return InkWell(onTap: onTap, borderRadius: BorderRadius.circular(8), child: Padding(padding: EdgeInsets.all(4.0 * scale), child: Column(mainAxisSize: MainAxisSize.min, children: [Icon(icon, size: 23 * scale, color: Get.theme.colorScheme.onSurface.withValues(alpha: 0.8)), SizedBox(height: 4 * scale), Text(label, style: TextStyle(fontSize: 10 * scale, color: Get.theme.colorScheme.onSurface.withValues(alpha: 0.6)))])));
   }
 
-  Widget _buildBottomIconWithLabel(IconData icon, String label, VoidCallback onTap) {
-    return InkWell(onTap: onTap, child: Column(mainAxisSize: MainAxisSize.min, children: [Icon(icon, size: 24, color: Get.theme.colorScheme.onSurface.withValues(alpha: 0.7)), const SizedBox(height: 4), Text(label, style: TextStyle(fontSize: 8, color: Get.theme.colorScheme.onSurface.withValues(alpha: 0.7)))]));
+  Widget _buildBottomIconWithLabel(IconData icon, String label, VoidCallback onTap, {double scale = 1.0}) {
+    return InkWell(onTap: onTap, child: Column(mainAxisSize: MainAxisSize.min, children: [Icon(icon, size: 25 * scale, color: Get.theme.colorScheme.onSurface.withValues(alpha: 0.7)), SizedBox(height: 4 * scale), Text(label, style: TextStyle(fontSize: 10 * scale, color: Get.theme.colorScheme.onSurface.withValues(alpha: 0.7)))]));
   }
 
+  // Aksiyon butonları: dialogWidth büyüse de sabit kalır.
   Widget _buildActionBtn(IconData icon, String label, VoidCallback onTap, {Color? color}) {
-    return ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: Get.theme.colorScheme.surface, foregroundColor: color ?? Get.theme.colorScheme.primary, elevation: 1, padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10), side: BorderSide(color: Colors.grey.withValues(alpha: 0.3)))), onPressed: onTap, child: Column(mainAxisSize: MainAxisSize.min, children: [Icon(icon, size: 20), const SizedBox(height: 4), Text(label, style: const TextStyle(fontSize: 9))]));
+    return ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: Get.theme.colorScheme.surface, foregroundColor: color ?? Get.theme.colorScheme.primary, elevation: 1, padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10), minimumSize: const Size(114, 0), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10), side: BorderSide(color: Colors.grey.withValues(alpha: 0.3)))), onPressed: onTap, child: Column(mainAxisSize: MainAxisSize.min, children: [Icon(icon, size: 26), const SizedBox(height: 5), Text(label, style: const TextStyle(fontSize: 14))]));
   }
 
   void _hideDevice(BuildContext context) {

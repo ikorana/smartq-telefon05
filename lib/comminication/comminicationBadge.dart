@@ -4,6 +4,7 @@ import 'comminication.dart';
 import 'mqttService.dart';
 import '../utils/device_id_helper.dart';
 import '../utils/fcm_helper.dart';
+import '../main.dart';
 
 class ComminicationBadge extends StatefulWidget {
   const ComminicationBadge({super.key});
@@ -49,8 +50,8 @@ class _ComminicationBadgeState extends State<ComminicationBadge>
         backgroundColor: theme.scaffoldBackgroundColor,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         child: Container(
-          width: 300,
-          padding: const EdgeInsets.all(20),
+          width: 380,
+          padding: const EdgeInsets.all(24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -59,11 +60,11 @@ class _ComminicationBadgeState extends State<ComminicationBadge>
                 children: [
                   Text(
                     'network_status'.tr,
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
                   GestureDetector(
                     onTap: () => Get.back(),
-                    child: Icon(Icons.close, size: 20, color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
+                    child: Icon(Icons.close, size: 24, color: theme.colorScheme.onSurface.withValues(alpha: 0.5)),
                   ),
                 ],
               ),
@@ -105,6 +106,12 @@ class _ComminicationBadgeState extends State<ComminicationBadge>
                 mqttConnected ? 'Bağlı' : 'Bağlı Değil',
                 mqttConnected ? Colors.green : Colors.grey,
               ),
+              _buildDetailRow(
+                Icons.info_outline,
+                'Uygulama Versiyonu',
+                appVersionString,
+                theme.colorScheme.primary,
+              ),
             ],
           ),
         ),
@@ -116,17 +123,17 @@ class _ComminicationBadgeState extends State<ComminicationBadge>
     return InkWell(
       onLongPress: onLongPress,
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 6.0),
+        padding: const EdgeInsets.symmetric(vertical: 8.0),
         child: Row(
           children: [
-            Icon(icon, size: 18, color: statusColor),
+            Icon(icon, size: 22, color: statusColor),
             const SizedBox(width: 12),
             Expanded(
-              child: Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+              child: Text(label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
             ),
             Text(
               value,
-              style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 12),
+              style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 15),
             ),
           ],
         ),

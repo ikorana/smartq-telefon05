@@ -8,6 +8,7 @@ import 'mqttService.dart';
 import 'comminication.dart';
 import '../user/userManagementService.dart';
 import '../utils/tts_helper.dart';
+import '../main.dart';
 
 class DataBridgeService extends GetxService {
   static final DataBridgeService _instance = DataBridgeService._internal();
@@ -75,9 +76,12 @@ class DataBridgeService extends GetxService {
         }
       }
 
-      // MQTT Mesajlarını loglayalım
+      // MQTT Mesajlarını loglayalım (push_temp çok sık geldiği için hariç tutuluyor)
       if (source == TransmissionType.mqtt) {
-        _log("MQTT Gelen: ${payload is Map ? (payload['com'] ?? payload) : payload}");
+        final dynamic mqttCom = payload is Map ? payload['com'] : null;
+        if (mqttCom != 'push_temp') {
+          _log("MQTT Gelen: ${payload is Map ? (mqttCom ?? payload) : payload}");
+        }
       }
 
       if (payload is Map) {
@@ -219,6 +223,10 @@ class DataBridgeService extends GetxService {
            _log("MQTT: ${payloadMap['mqtt']}");
            _log("Lisans: ${payloadMap['lic']}");
            _log("Wifi: ${payloadMap['wifi']}");
+           _log("AI: ${payloadMap['ai']}");
+           _log("Sulama: ${payloadMap['sulama']}");
+           _log("Aydınlatma: ${payloadMap['aydinlatma']}");
+           _log("Uygulama Versiyonu: $appVersionString");
            _log("------------------------");
         }
 

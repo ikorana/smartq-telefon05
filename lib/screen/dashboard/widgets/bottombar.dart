@@ -66,30 +66,33 @@ class DashboardBottombar extends StatelessWidget {
             }
           ),
 
-          // ÇIKIŞ BUTONU
-          _buildNavItem(
-            context, 
-            Icons.logout, 
-            'exit_app'.tr, 
-            false, 
-            () {
-              Get.defaultDialog(
-                title: 'attention'.tr,
-                middleText: "exit_confirm_msg".tr,
-                textConfirm: 'yes'.tr,
-                textCancel: 'no'.tr,
-                confirmTextColor: Colors.white,
-                buttonColor: theme.colorScheme.primary,
-                onConfirm: () {
-                  if (Platform.isAndroid) {
-                    SystemNavigator.pop();
-                  } else {
-                    exit(0);
-                  }
-                },
-              );
-            }
-          ),
+          // ÇIKIŞ BUTONU — iOS'ta gösterilmiyor: uygulamanın kendini
+          // kapatması (exit(0)) Apple'ın gözden geçirmesinde çökme gibi
+          // algılanıyor, App Store kuralları da bir "Quit" butonu istemiyor.
+          if (!Platform.isIOS)
+            _buildNavItem(
+              context,
+              Icons.logout,
+              'exit_app'.tr,
+              false,
+              () {
+                Get.defaultDialog(
+                  title: 'attention'.tr,
+                  middleText: "exit_confirm_msg".tr,
+                  textConfirm: 'yes'.tr,
+                  textCancel: 'no'.tr,
+                  confirmTextColor: Colors.white,
+                  buttonColor: theme.colorScheme.primary,
+                  onConfirm: () {
+                    if (Platform.isAndroid) {
+                      SystemNavigator.pop();
+                    } else {
+                      exit(0);
+                    }
+                  },
+                );
+              }
+            ),
         ],
       )),
     );

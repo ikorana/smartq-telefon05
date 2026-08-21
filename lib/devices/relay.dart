@@ -481,7 +481,7 @@ class RelayDevice extends BaseDevice {
         title: Text("${name ?? 'relay'.tr} - ${'groups'.tr}"),
         contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 15),
         content: SizedBox(
-          width: 350,
+          width: 455,
           child: Obx(() {
             if (userManager.activeGroups.isEmpty) {
               return Center(child: Text('no_users_found'.tr));
@@ -561,7 +561,7 @@ class RelayDevice extends BaseDevice {
                             child: Text(
                               group.name,
                               style: TextStyle(
-                                fontSize: 10,
+                                fontSize: 14,
                                 color: isLoading ? theme.colorScheme.primary.withValues(alpha: 0.5) : null,
                               ),
                               maxLines: 1,
@@ -963,7 +963,7 @@ class RelayDevice extends BaseDevice {
           children: [
             Expanded(
               child: Obx(() {
-                double minVal = minRx?.value.toDouble() ?? 0.0;
+                double minVal = (minRx?.value.toDouble() ?? 0.0).clamp(0.0, 254.0);
                 return Slider(
                   value: value.value.toDouble().clamp(minVal, 254),
                   min: minVal,
@@ -988,8 +988,13 @@ class RelayDevice extends BaseDevice {
     
     final worker = ever(level, (int val) => tempLevel.value = val);
 
+    final double dialogWidth = (scrWidth.value * 0.7).clamp(340.0, 600.0);
+    final double iconScale = (dialogWidth / 350).clamp(1.0, 1.6);
+
     Get.dialog(
-      AlertDialog(
+      SizedBox(
+        width: dialogWidth,
+        child: AlertDialog(
         backgroundColor: theme.scaffoldBackgroundColor,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
@@ -1021,19 +1026,23 @@ class RelayDevice extends BaseDevice {
               ],
             ),
             const SizedBox(height: 15),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _buildTopBarIconBtn(Icons.edit_note, 'rename'.tr, () => _showRenameDialog(context)),
-                _buildTopBarIconBtn(Icons.meeting_room_outlined, 'change_room'.tr, () => _showRoomSelectionDialog(context)),
-                _buildTopBarIconBtn(Icons.visibility_off_outlined, 'gizle'.tr, () => _hideDevice(context)),
-                _buildTopBarIconBtn(Icons.settings_remote, 'get_switches'.tr, () => _showSwitchSelectionDialog()),
-              ],
+            SizedBox(
+              width: dialogWidth - 40,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _buildTopBarIconBtn(Icons.edit_note, 'rename'.tr, () => _showRenameDialog(context), scale: iconScale),
+                  _buildTopBarIconBtn(Icons.meeting_room_outlined, 'change_room'.tr, () => _showRoomSelectionDialog(context), scale: iconScale),
+                  _buildTopBarIconBtn(Icons.visibility_off_outlined, 'gizle'.tr, () => _hideDevice(context), scale: iconScale),
+                  _buildTopBarIconBtn(Icons.settings_remote, 'get_switches'.tr, () => _showSwitchSelectionDialog(), scale: iconScale),
+                ],
+              ),
             ),
             const Divider(),
           ],
         ),
-        content: Column(
+        content: SingleChildScrollView(
+          child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             // --- ODA VE ANAHTAR BİLGİSİ ---
@@ -1096,6 +1105,7 @@ class RelayDevice extends BaseDevice {
               ],
             ),
           ],
+          ),
         ),
         actionsPadding: EdgeInsets.zero,
         actions: [
@@ -1105,34 +1115,40 @@ class RelayDevice extends BaseDevice {
               const Divider(height: 1),
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8),
-                child: Row(
+                child: SizedBox(
+                  width: dialogWidth,
+                  child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      _buildBottomIconWithLabel(Icons.refresh, 'get_level'.tr, () => _sendGetLevelCommand()),
+                      _buildBottomIconWithLabel(Icons.refresh, 'get_level'.tr, () => _sendGetLevelCommand(), scale: iconScale),
                       _buildBottomIconWithLabel(Icons.info_outline, 'status'.tr, () {
                         _showStatusDialog();
                         _sendQStatusCommand();
-                      }),
+                      }, scale: iconScale),
                       _buildBottomIconWithLabel(
-                        Icons.list_alt, 
-                        'details'.tr, 
-                        (channel == 10 || channel == 11) ? null : () => _showRelayDetailsPopup()
+                        Icons.list_alt,
+                        'details'.tr,
+                        (channel == 10 || channel == 11) ? null : () => _showRelayDetailsPopup(),
+                        scale: iconScale,
                       ),
                       _buildBottomIconWithLabel(
-                        Icons.groups, 
-                        'groups'.tr, 
+                        Icons.groups,
+                        'groups'.tr,
                         (channel == 10 || channel == 11) ? null : () {
                           _showGroupsDialog();
                           _sendGetGroupsCommand();
-                        }
+                        },
+                        scale: iconScale,
                       ),
                       _buildBottomIconWithLabel(
-                        Icons.auto_awesome, 
-                        'scenarios'.tr, 
-                        (channel == 10 || channel == 11) ? null : () => _showScenariosDialog()
+                        Icons.auto_awesome,
+                        'scenarios'.tr,
+                        (channel == 10 || channel == 11) ? null : () => _showScenariosDialog(),
+                        scale: iconScale,
                       ),
                     ],
                   ),
+                ),
                 ),
               const Divider(height: 1),
               TextButton(
@@ -1143,6 +1159,7 @@ class RelayDevice extends BaseDevice {
             ],
           ),
         ],
+        ),
       ),
     ).then((_) => worker.dispose());
   }
@@ -1162,10 +1179,10 @@ class RelayDevice extends BaseDevice {
           const SizedBox(width: 4),
           Text(
             label,
-            style: TextStyle(
-              fontSize: 10,
+            style: const TextStyle(
+              fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: theme.colorScheme.primary.withValues(alpha: 0.8),
+              color: Colors.white,
             ),
           ),
         ],
@@ -1173,25 +1190,25 @@ class RelayDevice extends BaseDevice {
     );
   }
 
-  Widget _buildTopBarIconBtn(IconData icon, String label, VoidCallback onTap) {
+  Widget _buildTopBarIconBtn(IconData icon, String label, VoidCallback onTap, {double scale = 1.0}) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(8),
       child: Padding(
-        padding: const EdgeInsets.all(4.0),
+        padding: EdgeInsets.all(4.0 * scale),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 22, color: Get.theme.colorScheme.onSurface.withValues(alpha: 0.8)),
-            const SizedBox(height: 4),
-            Text(label, style: TextStyle(fontSize: 8, color: Get.theme.colorScheme.onSurface.withValues(alpha: 0.6))),
+            Icon(icon, size: 23 * scale, color: Get.theme.colorScheme.onSurface.withValues(alpha: 0.8)),
+            SizedBox(height: 4 * scale),
+            Text(label, style: TextStyle(fontSize: 10 * scale, color: Get.theme.colorScheme.onSurface.withValues(alpha: 0.6))),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildBottomIconWithLabel(IconData icon, String label, VoidCallback? onTap) {
+  Widget _buildBottomIconWithLabel(IconData icon, String label, VoidCallback? onTap, {double scale = 1.0}) {
     final bool isEnabled = onTap != null;
     return InkWell(
       onTap: onTap,
@@ -1200,22 +1217,24 @@ class RelayDevice extends BaseDevice {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 24, color: Get.theme.colorScheme.onSurface.withValues(alpha: 0.7)),
-            const SizedBox(height: 4),
-            Text(label, style: TextStyle(fontSize: 8, color: Get.theme.colorScheme.onSurface.withValues(alpha: 0.7))),
+            Icon(icon, size: 25 * scale, color: Get.theme.colorScheme.onSurface.withValues(alpha: 0.7)),
+            SizedBox(height: 4 * scale),
+            Text(label, style: TextStyle(fontSize: 10 * scale, color: Get.theme.colorScheme.onSurface.withValues(alpha: 0.7))),
           ],
         ),
       ),
     );
   }
 
+  // Aksiyon butonları: dialogWidth büyüse de sabit kalır.
   Widget _buildActionBtn(IconData icon, String label, VoidCallback onTap, {Color? color}) {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
         backgroundColor: Get.theme.colorScheme.surface,
         foregroundColor: color ?? Get.theme.colorScheme.primary,
         elevation: 1,
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
+        minimumSize: const Size(114, 0),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(10),
           side: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
@@ -1225,9 +1244,9 @@ class RelayDevice extends BaseDevice {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 20),
-          const SizedBox(height: 4),
-          Text(label, style: const TextStyle(fontSize: 9)),
+          Icon(icon, size: 26),
+          const SizedBox(height: 5),
+          Text(label, style: const TextStyle(fontSize: 14)),
         ],
       ),
     );

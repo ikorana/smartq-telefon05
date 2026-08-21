@@ -3,18 +3,82 @@ const admin = require("firebase-admin");
 const jwt = require("jsonwebtoken");
 
 // AI ENTEGRASYONU İÇİN GEREKLİ KÜTÜPHANELER
-const { genkit } = require("genkit");
-const { googleAI } = require("@genkit-ai/googleai");
+const Anthropic = require("@anthropic-ai/sdk");
 const { z } = require("zod");
 
 admin.initializeApp();
 
-// Genkit'i model belirtmeden, sadece plugin ile yalın başlatıyoruz
-const aiInstance = genkit({
-  plugins: [
-    googleAI({ apiKey: process.env.GEMINI_API_KEY })
-  ],
-});
+const CLAUDE_MODEL = "claude-haiku-4-5-20251001";
+
+// NOT: Genkit'in @genkit-ai/anthropic eklentisi (v0.3.0) şemalı/structured
+// output'u Claude modelleri için henüz DESTEKLEMİYOR ("Only text output
+// format is supported for Claude models currently" hatası verip duruyordu).
+// Bu yüzden genkit'i tamamen atlayıp Claude'un kendi native tool-use
+// mekanizmasıyla (zorunlu tool_choice) şemalı JSON çıktısı üretiyoruz.
+function getAnthropicClient() {
+  // Fallback değer YALNIZCA "firebase deploy"ın yerel kod analizi sırasında
+  // (gerçek secret henüz enjekte edilmemişken) SDK'nın anında fırlattığı
+  // "API key yok" hatasını önlemek için — gerçek bir çağrıda asla
+  // kullanılmaz, üretimde secret bunun üzerine yazar.
+  return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY || "local-analysis-placeholder" });
+}
+
+/**
+ * Claude'dan, verilen zod şemasına birebir uyan bir JSON nesnesi üretmesini
+ * ister (tool-use ile zorlanmış yapılandırılmış çıktı).
+ */
+async function generateStructured({ system, prompt, schema }) {
+  const client = getAnthropicClient();
+  // zod v4'ün yerleşik JSON Schema dönüştürücüsü — zod-to-json-schema paketi
+  // zod v3'e göre yazıldığı için v4 şemalarında boş çıktı üretiyordu.
+  const { $schema, ...jsonSchema } = z.toJSONSchema(schema);
+
+  const response = await client.messages.create({
+    model: CLAUDE_MODEL,
+    max_tokens: 1024,
+    system,
+    messages: [{ role: "user", content: prompt }],
+    tools: [{
+      name: "extract_command",
+      description: "Kullanıcı komutunu/verisini yapılandırılmış alanlara ayırır.",
+      input_schema: jsonSchema,
+    }],
+    tool_choice: { type: "tool", name: "extract_command" },
+  });
+
+  const toolUse = response.content.find((c) => c.type === "tool_use");
+  if (!toolUse) throw new Error("Claude yapılandırılmış çıktı üretmedi.");
+  return toolUse.input;
+}
+
+const DAILY_AI_QUOTA = 20;
+
+/**
+ * Kullanıcı (lisansKodu) başına, günlük Claude kullanım kotası — ayrı bir
+ * koleksiyon DEĞİL, cihazın kendi kaydı olan cihaz_kayitlari/{lisansKodu}
+ * dokümanının içine "aiKullanim" alanı olarak gömülü tutulur (eski tasarımla
+ * aynı yer). aiKullanim, tarihe göre anahtarlanmış bir map'tir: {"2026-08-18":3, ...}
+ * — her gün kendi anahtarını aldığı için ayrıca bir "sıfırlama" işlemi gerekmez.
+ * lisansKodu yoksa (nadir/edge-case: örn. lat/lng override ile gelen lisanssız
+ * çağrı) ortak bir "anonim" dokümanına düşer, yine de sınırsız kalmaz.
+ * interpretVoiceCommand ve getIrrigationDecision'ın ikisi de Claude kullandığı
+ * için aynı sayacı paylaşır. Firestore transaction ile atomik artırılır, eşzamanlı
+ * isteklerde kotanın aşılmasını engeller. Gün, Türkiye saatine göre (Europe/Istanbul) döner.
+ */
+async function tryConsumeAiQuota(lisansKodu) {
+  const today = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Istanbul" }); // YYYY-MM-DD
+  const kullaniciAnahtari = lisansKodu ? String(lisansKodu) : "anonim";
+  const ref = admin.firestore().collection("cihaz_kayitlari").doc(kullaniciAnahtari);
+
+  return admin.firestore().runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    const mevcutAiKullanim = (snap.exists && snap.data().aiKullanim) || {};
+    const gunlukSayac = mevcutAiKullanim[today] || 0;
+    if (gunlukSayac >= DAILY_AI_QUOTA) return false;
+    tx.set(ref, { aiKullanim: { [today]: gunlukSayac + 1 } }, { merge: true });
+    return true;
+  });
+}
 
 /**
  * YARDIMCI FONKSİYON: Open-Meteo Geocoding API ile Türkçe il/ilçe/mahalle adını lat/lng'e çevirir.
@@ -230,7 +294,7 @@ exports.sendAlarmNotification = onRequest(async (req, res) => {
  * 5. FONKSİYON: interpretVoiceCommand
  * Doğal dil komutlarını SmartQ cihazlarının anlayacağı kesin JSON şemasına çevirir.
  */
-exports.interpretVoiceCommand = onRequest({ secrets: ["GEMINI_API_KEY"] }, async (req, res) => {
+exports.interpretVoiceCommand = onRequest({ secrets: ["ANTHROPIC_API_KEY"] }, async (req, res) => {
   try {
     const { userPrompt, projeNo, binaNo, daireNo, lisansKodu } = req.body.data || {};
 
@@ -238,11 +302,23 @@ exports.interpretVoiceCommand = onRequest({ secrets: ["GEMINI_API_KEY"] }, async
       return res.status(400).send({ data: { status: "error", message: "userPrompt alanı zorunludur." } });
     }
 
+    if (!(await tryConsumeAiQuota(lisansKodu))) {
+      return res.status(200).send({
+        data: {
+          status: "success",
+          command: {
+            targetType: "unknown", action: "STATUS_CHECK",
+            responseMessage: "Günlük yapay zeka kullanım limitine ulaşıldı, lütfen yarın tekrar deneyin."
+          }
+        }
+      });
+    }
+
     // Gelişmiş Akıllı Ev Cihaz, Mod, Senaryo ve Grup Şeması (Zod)
     const CommandSchema = z.object({
       targetType: z.enum([
-        "device", "mode", "scene", "group", "location", "unknown"
-      ]).describe("Komutun doğrudan hedef aldığı ana yapı türü. Doğrudan bir cihazsa 'device', ev moduysa 'mode', 16 senaryodan biriyse 'scene', bir cihaz grubu hedefliyse 'group', kullanıcı kendi konumunu kaydetmek/güncellemek istiyorsa 'location' seçilmelidir."),
+        "device", "mode", "scene", "group", "location", "weather", "chat", "unknown"
+      ]).describe("Komutun doğrudan hedef aldığı ana yapı türü. Doğrudan bir cihazsa 'device', ev moduysa 'mode', 16 senaryodan biriyse 'scene', bir cihaz grubu hedefliyse 'group', kullanıcı kendi konumunu kaydetmek/güncellemek istiyorsa 'location', hava durumu soruyorsa 'weather', ev otomasyonuyla ilgisiz genel bir soru/sohbetse (yemek tarifi, genel bilgi vb.) 'chat' seçilmelidir."),
 
       deviceType: z.enum([
         "blind", "door", "elevator", "energy", "garage",
@@ -287,13 +363,10 @@ exports.interpretVoiceCommand = onRequest({ secrets: ["GEMINI_API_KEY"] }, async
         .describe("Kullanıcıya mobil uygulamada dönecek sesli/yazılı Türkçe yanıt")
     });
 
-    // Gemini ile şemalı analiz çağrısı
-    const aiResponse = await aiInstance.generate({
-      model: 'googleai/gemini-2.5-flash',
+    // Claude ile şemalı analiz çağrısı
+    const command = await generateStructured({
       prompt: `Kullanıcı Komutu: "${userPrompt}"\nBağlam -> Proje: ${projeNo || 1}, Bina: ${binaNo || 0}, Daire: ${daireNo || 0}`,
-      output: {
-        schema: CommandSchema,
-      },
+      schema: CommandSchema,
       system: `Sen SmartQ akıllı ev otomasyon sisteminin yapay zeka motorusun.
                Kullanıcılardan gelen Türkçe doğal dil komutlarını cihazların, modların, senaryoların ve grupların işleyebileceği saf verilere dönüştürürsün.
 
@@ -325,10 +398,19 @@ exports.interpretVoiceCommand = onRequest({ secrets: ["GEMINI_API_KEY"] }, async
                   - locationSpecific alanına SADECE en spesifik yer adı (ilçe/mahalle/semt) yazılır, il adı KATILMAZ ve çekim eki ("-deyim", "-ındayım" vb.) TEMİZLENİR. Örn: "istanbulun maltepe ilçesindeyim" -> locationSpecific="Maltepe". "izmir çiğli seyrekteyim" -> locationSpecific="Seyrek".
                   - locationRegion alanına, kullanıcı bir il/şehir belirtmişse o il adı sade hâliyle yazılır (Örn: "İstanbul", "İzmir"). Belirtilmemişse boş bırakılır.
                   - SEN (yapay zeka) ASLA enlem/boylam/koordinat ÜRETMEZSİN ve tahmin etmezsin. Koordinat çözümlemesi tamamen ayrı, gerçek bir coğrafi veritabanı tarafından yapılacaktır. Senin tek görevin cümledeki yer adını doğru ayrıştırmaktır.
-                  - responseMessage alanına konum kaydıyla ilgili genel bir onay cümlesi yaz (örn. "Konumunuzu kaydediyorum."); kesin başarı/hata mesajı ayrıca sunucu tarafından güncellenecektir.`
-    });
+                  - responseMessage alanına konum kaydıyla ilgili genel bir onay cümlesi yaz (örn. "Konumunuzu kaydediyorum."); kesin başarı/hata mesajı ayrıca sunucu tarafından güncellenecektir.
 
-    const command = aiResponse.output;
+               7. HAVA DURUMU (WEATHER) KURALLARI:
+                  - Kullanıcı hava durumunu sorduğunda (Örn: "hava nasıl", "yarın yağmur var mı", "dışarısı sıcak mı") targetType="weather", action="STATUS_CHECK" olmalı.
+                  - responseMessage alanına ŞİMDİLİK genel bir cümle yaz (örn. "Hava durumuna bakıyorum."); GERÇEK hava verisi ayrıca sunucu tarafından alınıp bu alanın üzerine yazılacak, SEN uydurma bir sıcaklık/tahmin YAZMA.
+
+               8. SOHBET (CHAT) KURALLARI:
+                  - Ev otomasyonuyla hiç ilgisi olmayan genel bir soru/istekse (Örn: "ne pişireyim", "İstanbul'un nüfusu ne kadar", bir şaka anlat) targetType="chat", action="STATUS_CHECK" olmalı.
+                  - responseMessage alanına kendi genel bilginle doğal ve DOĞRUDAN bir cevap yaz.
+
+               9. YANIT UZUNLUĞU (TÜM DURUMLAR İÇİN GEÇERLİ):
+                  - responseMessage SESLİ olarak okunacaktır. HER ZAMAN kısa tut: tercihen tek cümle, en fazla iki kısa cümle. Uzun paragraf, madde işaretli liste veya çoklu cümlelik açıklama YAZMA.`
+    });
 
     // KONUM KAYDETME: koordinatı AI değil, gerçek geocoding servisi üretir.
     // updateDeviceLocation ile AYNI alanlara (lat/lng/locationName) yazılır ki tek bir
@@ -350,6 +432,44 @@ exports.interpretVoiceCommand = onRequest({ secrets: ["GEMINI_API_KEY"] }, async
           console.error("Konum (voice) Hatası:", geoError);
           command.responseMessage = `${command.locationSpecific} konumunu bulamadım, lütfen tekrar deneyin.`;
         }
+      }
+    }
+
+    // HAVA DURUMU: AI'a gerçek veri gelmeden önce sordurmuyoruz (uydurmasın diye) —
+    // kayıtlı konum için GERÇEK Open-Meteo verisini çekip AI'a SADECE bunu yorumlatıyoruz.
+    // getIrrigationDecision'daki "AI veri üretmez, veriyi yorumlar" prensibiyle aynı.
+    if (command && command.targetType === "weather") {
+      try {
+        const deviceSnap = lisansKodu
+          ? await admin.firestore().collection("cihaz_kayitlari").doc(String(lisansKodu)).get()
+          : null;
+        const d = deviceSnap && deviceSnap.exists ? deviceSnap.data() : null;
+
+        if (!d || d.lat === undefined || d.lng === undefined) {
+          command.responseMessage = "Hava durumunu söyleyebilmem için önce konumunuzu kaydetmeniz gerekiyor.";
+        } else {
+          const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${d.lat}&longitude=${d.lng}` +
+            `&current=temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m&timezone=Europe%2FIstanbul`;
+          const weatherResp = await fetch(weatherUrl);
+          if (!weatherResp.ok) throw new Error(`Hava durumu servisi hata döndürdü: ${weatherResp.status}`);
+          const cur = (await weatherResp.json()).current;
+
+          const phrased = await generateStructured({
+            schema: z.object({
+              answer: z.string().describe("Kullanıcıya sesli söylenecek, KISA (tek cümle) Türkçe hava durumu cevabı.")
+            }),
+            prompt: `Kullanıcının sorusu: "${userPrompt}"\nKonum: ${d.locationName || `${d.lat},${d.lng}`}\n` +
+              `GERÇEK GÜNCEL VERİ -> Sıcaklık: ${cur.temperature_2m}°C, Nem: %${cur.relative_humidity_2m}, ` +
+              `Yağış: ${cur.precipitation}mm, Rüzgar: ${cur.wind_speed_10m}km/s`,
+            system: `Sen SmartQ akıllı ev asistanısın. Sana verilen GERÇEK hava durumu verisine dayanarak kullanıcının
+                     sorusuna doğal, KISA (tek cümle) bir Türkçe sesli cevap ver. Veriyi asla uydurma, SADECE sana
+                     verilen sayıları kullan.`
+          });
+          command.responseMessage = phrased.answer;
+        }
+      } catch (weatherError) {
+        console.error("Hava Durumu (voice) Hatası:", weatherError);
+        command.responseMessage = "Hava durumu bilgisini şu anda alamadım.";
       }
     }
 
@@ -439,7 +559,7 @@ exports.updateDeviceLocation = onRequest(async (req, res) => {
  *   {"lisansKodu":"ABC123","time":"05:20","duration":15}   // konum cache'ten okunur
  *   {"lat":40.93,"lng":29.15,"time":"05:20","duration":15} // tek seferlik override
  */
-exports.getIrrigationDecision = onRequest({ secrets: ["GEMINI_API_KEY"] }, async (req, res) => {
+exports.getIrrigationDecision = onRequest({ secrets: ["ANTHROPIC_API_KEY"] }, async (req, res) => {
   try {
     const { lisansKodu, lat, lng, time, duration } = req.body.data || {};
 
@@ -453,6 +573,20 @@ exports.getIrrigationDecision = onRequest({ secrets: ["GEMINI_API_KEY"] }, async
     }
     if ((lat === undefined || lng === undefined) && !lisansKodu) {
       return res.status(400).send({ data: { status: "error", message: "'lisansKodu' ya da 'lat'/'lng' ikilisi zorunludur." } });
+    }
+
+    if (!(await tryConsumeAiQuota(lisansKodu))) {
+      // Kota dolduğunda AI'a hiç sorulmadan, istenen (planlanan) süre AYNEN uygulanır —
+      // sulama komple iptal edilmez, sadece "akıllı" ayarlama devre dışı kalır.
+      return res.status(200).send({
+        data: {
+          status: "success",
+          duration: requestedDuration,
+          reason: "Günlük yapay zeka kullanım limitine ulaşıldı, planlanan süre değiştirilmeden uygulandı.",
+          location: null,
+          weather: null
+        }
+      });
     }
 
     // 1. ADIM: KONUM ÇÖZÜMLEME — sadece override ya da cache okuma, geocode YOK
@@ -503,15 +637,14 @@ exports.getIrrigationDecision = onRequest({ secrets: ["GEMINI_API_KEY"] }, async
     // 3. ADIM: AI'A HAM VERİYİ VERİP SADECE YORUMLATMA (veri üretmesi değil, yorumlaması isteniyor)
     const IrrigationSchema = z.object({
       duration: z.number().min(0).describe("Önerilen sulama süresi (dakika). Asla girdideki istenen süreyi aşmamalı, sadece azaltılabilir veya 0 yapılabilir."),
-      reason: z.string().describe("Kararın kısa Türkçe gerekçesi (örn. 'Yüksek yağış ihtimali nedeniyle sulama iptal edildi.')")
+      reason: z.string().describe("Kararın Türkçe gerekçesi. TEK CÜMLE olmalı, uzun paragraf yazma (örn. 'Yüksek yağış ihtimali nedeniyle sulama iptal edildi.')")
     });
 
-    const aiResponse = await aiInstance.generate({
-      model: 'googleai/gemini-2.5-flash',
+    const irrigation = await generateStructured({
       prompt: `Konum: ${resolvedName}\nPlanlanan sulama saati: ${time}\nİstenen (maksimum) sulama süresi: ${requestedDuration} dakika\n` +
         `Güncel hava verisi -> Sıcaklık: ${weatherFacts.sicaklikC}°C, Nem: %${weatherFacts.nemYuzde}, ` +
         `Yağış ihtimali: %${weatherFacts.yagisIhtimaliYuzde}, Yağış miktarı: ${weatherFacts.yagisMm}mm, Rüzgar: ${weatherFacts.ruzgarKmh}km/s`,
-      output: { schema: IrrigationSchema },
+      schema: IrrigationSchema,
       system: `Sen bir akıllı bahçe/çim sulama sisteminin karar destek motorusun.
                Sana verilen GERÇEK hava verisine dayanarak, planlanan (baz) sulama süresini artırıp azaltmaya karar verirsin.
                Girdideki süre bir ORTALAMA/BAZ değerdir, sabit bir tavan değildir; mevsimsel kuraklık veya yüksek sıcaklıkta artırabilirsin.
@@ -521,7 +654,7 @@ exports.getIrrigationDecision = onRequest({ secrets: ["GEMINI_API_KEY"] }, async
                3. Rüzgar çok yüksekse (30km/s üzeri) sulama verimsiz ve savurma riskli olur, süreyi azalt.
                4. Hava çok sıcak (30°C üzeri) ve kuruysa (nem %40 altı, yağış ihtimali düşük), baz süreyi makul ölçüde artırabilirsin.
                5. Normal/ortalama koşullarda baz süreyi olduğu gibi koru.
-               6. reason alanına kısa, anlaşılır bir Türkçe gerekçe yaz.`
+               6. reason alanına TEK CÜMLE, kısa ve anlaşılır bir Türkçe gerekçe yaz. Uzun paragraf yazma.`
     });
 
     // 4. ADIM: GÜVENLİK KELEPÇESİ — kod seviyesinde sabit kurallar, prompt'a güvenilmiyor.
@@ -529,7 +662,7 @@ exports.getIrrigationDecision = onRequest({ secrets: ["GEMINI_API_KEY"] }, async
     // (AI_MAX_ABSOLUTE_MINUTES) hiçbir koşulda aşamaz. Bu ikinci sınır, cihazdan anormal
     // düşük/yüksek bir 'duration' gelse bile fiziksel taşkın riskine karşı sabit bir korumadır.
     const AI_MAX_ABSOLUTE_MINUTES = 60;
-    const aiDuration = Number(aiResponse.output?.duration);
+    const aiDuration = Number(irrigation?.duration);
     const safeDuration = Number.isFinite(aiDuration)
       ? Math.min(Math.max(0, aiDuration), requestedDuration * 2, AI_MAX_ABSOLUTE_MINUTES)
       : requestedDuration; // AI/parse hatasında güvenli varsayılan: orijinal planlanan süreyi koru
@@ -538,7 +671,7 @@ exports.getIrrigationDecision = onRequest({ secrets: ["GEMINI_API_KEY"] }, async
       data: {
         status: "success",
         duration: safeDuration,
-        reason: aiResponse.output?.reason || "Değerlendirme tamamlandı.",
+        reason: irrigation?.reason || "Değerlendirme tamamlandı.",
         location: resolvedName,
         weather: weatherFacts
       }

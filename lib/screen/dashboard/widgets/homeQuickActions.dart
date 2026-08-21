@@ -29,6 +29,7 @@ class _HomeQuickActionsState extends State<HomeQuickActions> {
     // Widget aktive edildiğinde (ekrana her geldiğinde) güncel mod bilgisini iste
     controller.getSystemMode();
     controller.getIrrigationStatus();
+    controller.getBoxVersion();
   }
 
   @override
@@ -106,14 +107,14 @@ class _HomeQuickActionsState extends State<HomeQuickActions> {
                       },
                     ),
                   ),
-                  if (isTablet.value) ...[
+                  if (isTablet.value && controller.hasIrrigationModule.value)
                     SizedBox(
                       width: buttonWidth,
                       height: 75,
                       child: _buildActionButton(
                         context,
-                        label: controller.isIrrigationRunning.value 
-                            ? 'garden_watering_active'.tr 
+                        label: controller.isIrrigationRunning.value
+                            ? 'garden_watering_active'.tr
                             : 'garden_watering'.tr,
                         icon: Icons.water_drop,
                         color: Colors.cyan,
@@ -121,6 +122,7 @@ class _HomeQuickActionsState extends State<HomeQuickActions> {
                         onTap: () => Get.dialog(const IrrigationDialog()),
                       ),
                     ),
+                  if (isTablet.value && controller.hasLightingModule.value)
                     SizedBox(
                       width: buttonWidth,
                       height: 75,
@@ -133,7 +135,6 @@ class _HomeQuickActionsState extends State<HomeQuickActions> {
                         onTap: () {},
                       ),
                     ),
-                  ],
                 ],
               ),
             ),

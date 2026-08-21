@@ -1,0 +1,15 @@
+Hello,
+
+Thank you for your feedback under Guideline 4 - Design regarding the app not being optimized for iPad. We identified the root cause: the device control popups (detail screens for lamps, relays, blinds, doors, etc.) had a fixed width, which made them appear cramped and disproportionate on the larger iPad screen.
+
+In this version we made the following fixes:
+
+- All device detail popups now autosize based on the screen width; they appear wider and more spacious on iPad, and compact on iPhone.
+- Icon, button, and font sizes within the popups now scale proportionally with screen size as well.
+- The app now locks orientation based on device type at launch: portrait on iPhone, landscape on iPad — so the interface always opens in the orientation it was designed for.
+- We fixed several overflow issues that surfaced in some popups during testing; content scrolls where needed instead of overflowing.
+
+The attached screenshots show the updated iPad interface. Thank you for your review.
+
+Best regards,
+The SmartQ Home Team

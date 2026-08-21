@@ -152,6 +152,10 @@ class LButtonDevice extends BaseDevice {
       tempLevel.value = val;
     });
 
+    // Dialog genişliği zaten isTablet.value ile Get.width/2'ye ayarlanıyor;
+    // ikon/yazı boyutu için de aynı büyüklük mantığını (iconScale) kullanıyoruz.
+    final double iconScale = isTablet.value ? (Get.width / 2 / 350).clamp(1.0, 1.6) : 1.0;
+
     Get.dialog(
       Dialog(
         backgroundColor: theme.scaffoldBackgroundColor,
@@ -193,8 +197,8 @@ class LButtonDevice extends BaseDevice {
                   Obx(() => Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      _buildTopBarIconBtn(Icons.edit_note, 'rename'.tr, isBusy.value ? () {} : () => _showRenameDialog()),
-                      _buildTopBarIconBtn(Icons.meeting_room_outlined, 'change_room'.tr, isBusy.value ? () {} : () => _showRoomSelectionDialog()),
+                      _buildTopBarIconBtn(Icons.edit_note, 'rename'.tr, isBusy.value ? () {} : () => _showRenameDialog(), scale: iconScale),
+                      _buildTopBarIconBtn(Icons.meeting_room_outlined, 'change_room'.tr, isBusy.value ? () {} : () => _showRoomSelectionDialog(), scale: iconScale),
                     ],
                   )),
                   const Divider(),
@@ -278,10 +282,10 @@ class LButtonDevice extends BaseDevice {
           const SizedBox(width: 4),
           Text(
             label,
-            style: TextStyle(
-              fontSize: 10,
+            style: const TextStyle(
+              fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: theme.colorScheme.primary.withValues(alpha: 0.8),
+              color: Colors.white,
             ),
           ),
         ],
@@ -289,18 +293,18 @@ class LButtonDevice extends BaseDevice {
     );
   }
 
-  Widget _buildTopBarIconBtn(IconData icon, String label, VoidCallback onTap) {
+  Widget _buildTopBarIconBtn(IconData icon, String label, VoidCallback onTap, {double scale = 1.0}) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(8),
       child: Padding(
-        padding: const EdgeInsets.all(4.0),
+        padding: EdgeInsets.all(4.0 * scale),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 22, color: Get.theme.colorScheme.onSurface.withValues(alpha: 0.8)),
-            const SizedBox(height: 4),
-            Text(label, style: TextStyle(fontSize: 8, color: Get.theme.colorScheme.onSurface.withValues(alpha: 0.6))),
+            Icon(icon, size: 23 * scale, color: Get.theme.colorScheme.onSurface.withValues(alpha: 0.8)),
+            SizedBox(height: 4 * scale),
+            Text(label, style: TextStyle(fontSize: 10 * scale, color: Get.theme.colorScheme.onSurface.withValues(alpha: 0.6))),
           ],
         ),
       ),

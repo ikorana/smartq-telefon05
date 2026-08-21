@@ -155,7 +155,7 @@ class DeviceSetupPage extends GetView<DeviceSetupController> {
                     final log = controller.terminalLogs[index];
                     return Text(
                       log,
-                      style: const TextStyle(color: Colors.greenAccent, fontFamily: 'monospace', fontSize: 12),
+                      style: const TextStyle(color: Colors.white, fontFamily: 'monospace', fontSize: 14),
                     );
                   },
                 );
@@ -348,7 +348,6 @@ class DeviceSetupPage extends GetView<DeviceSetupController> {
         _buildMenuButton(context, 'get_devices'.tr, Icons.get_app, () => _showGetDeviceOptions(context), false),
         _buildMenuButton(context, 'search_devices'.tr, Icons.search, () => _showSearchOptions(context), false),
         _buildMenuButton(context, 'address_devices'.tr, Icons.format_list_numbered, () => DeviceAddressHelper.showChannelSelection(context, controller), false),
-        _buildMenuButton(context, 'MODBUS Cihaz Adresle', Icons.settings_ethernet, () => {}, false),
         _buildMenuButton(context, 'clear_device_list'.tr, Icons.layers_clear_outlined, () => _showClearListConfirm(context), false, isWarning: true),
         _buildMenuButton(context, 'Lokal Cihazları SİL', Icons.delete_sweep_outlined, () => _showClearLocalDevicesConfirm(context), false, isWarning: true),
       ];
@@ -360,8 +359,6 @@ class DeviceSetupPage extends GetView<DeviceSetupController> {
         _buildMenuButton(context, 'show_hidden_groups'.tr, Icons.visibility_outlined, () => _showHiddenGroupsDialog(context, userManager), true),
         _buildMenuButton(context, 'show_hidden_scenarios'.tr, Icons.auto_awesome_outlined, () => _showHiddenScenariosDialog(context, userManager), true),
         _buildMenuButton(context, 'show_hidden_devices'.tr, Icons.devices_other_outlined, () => _showHiddenDevicesDialog(context, userManager), true),
-        _buildMenuButton(context, 'Normal Mod Ayarları', Icons.home_outlined, () => {}, true),
-        _buildMenuButton(context, 'Evden Çıkış Modu Ayarları', Icons.exit_to_app, () => {}, true),
       ];
     }
 

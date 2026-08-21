@@ -4,6 +4,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:get/get.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:telefon05/screen/rootGate.dart';
 import 'package:telefon05/theme/theme_service.dart';
 import 'package:telefon05/translation/appTranslation.dart';
@@ -29,9 +30,14 @@ final RxDouble btnIcoHigh = 55.0.obs;
 final RxDouble btnTxtHigh = 35.0.obs;
 final RxDouble btnHigh = (btnIcoHigh.value + btnTxtHigh.value).obs;
 
+String appVersionString = '';
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
+  final packageInfo = await PackageInfo.fromPlatform();
+  appVersionString = '${packageInfo.version}+${packageInfo.buildNumber}';
+
   // 1. GetStorage, TTS ve STT Başlatma (mikrofon/ses ikonlarının başlangıçta
   // gösterilip gösterilmeyeceğine karar vermek için burada, uygulama açılır
   // açılmaz kontrol ediyoruz)

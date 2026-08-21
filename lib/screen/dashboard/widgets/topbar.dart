@@ -77,12 +77,13 @@ class DashboardTopbar extends StatelessWidget {
                   }),
                   Obx(() {
                     final weather = weatherService.currentWeather.value;
+                    final bool isActive = controller.hasIrrigationModule.value;
                     return IconButton(
                       icon: Icon(
                         Icons.cloud_outlined,
-                        color: weather != null ? Colors.orangeAccent : theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                        color: isActive && weather != null ? Colors.orangeAccent : theme.colorScheme.onSurface.withValues(alpha: 0.4),
                       ),
-                      onPressed: () => _showWeatherDialog(context, weatherService),
+                      onPressed: isActive ? () => _showWeatherDialog(context, weatherService) : null,
                     );
                   }),
                   Obx(() {

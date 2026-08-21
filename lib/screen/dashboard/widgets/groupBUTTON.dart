@@ -72,7 +72,7 @@ class GroupButton extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
-                  fontSize: 10,
+                  fontSize: 12,
                   color: theme.colorScheme.onSurface,
                 ),
               ),
