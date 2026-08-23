@@ -54,17 +54,10 @@ void showTempPopup(int deviceId, int channel, InsIntroScn initialIns, {String? l
             border: Border.all(color: theme.colorScheme.primary.withOpacity(0.2)),
           ),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              Icon(
-                status.value == 1 ? Icons.check_circle : Icons.cancel,
-                color: status.value == 1 ? Colors.green : Colors.red,
-              ),
-              const SizedBox(width: 10),
-              Text(
-                status.value == 1 ? "Aktif" : "Pasif",
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
+              buildCompactRadio(1, status.value, "Aktif", (v) => status.value = v!),
+              buildCompactRadio(0, status.value, "Pasif", (v) => status.value = v!),
             ],
           ),
         )),
@@ -81,6 +74,20 @@ void showTempPopup(int deviceId, int channel, InsIntroScn initialIns, {String? l
                 "ins": initialIns.iadr,
                 "kanal": channel
               });
+            }, iconSize: 40, fontSize: 15),
+            buildBottomIconButton(Icons.access_time, "Zaman", Colors.orange, () {
+              showTimersWindow(Get.context!, instanceLabel, deviceId, initialIns.iadr, channel, stuckOnly: true, stuckLabel: "Okuma Aralığı (sn)");
+            }, iconSize: 40, fontSize: 15),
+            buildBottomIconButton(Icons.check_circle_outline, "Kaydet", Colors.green, () {
+              sendToOutbox({
+                "com": "set_instance",
+                "adr": deviceId,
+                "ins": initialIns.iadr,
+                "kanal": channel,
+                "act": status.value,
+              });
+              Get.back();
+              Get.snackbar("Başarılı", "Ayarlar güncellendi.");
             }, iconSize: 40, fontSize: 15),
             buildBottomIconButton(Icons.cancel_outlined, "Kapat", Colors.red, () {
               Get.back();

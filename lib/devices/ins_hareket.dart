@@ -249,10 +249,10 @@ void showMotionConfigPopup(int deviceId, int channel, InsIntroScn initialIns) {
               // Filtre/Zaman/C.Hold: DALI'ye özgü kavramlar, yerel (kanal=10) anahtarlarda karşılığı yok.
               if (channel != 10) ...[
                 buildBottomIconButton(Icons.filter_alt_outlined, "Filtre", theme.colorScheme.primary, () {
-                   showFilterWindow(Get.context!, instanceLabel, deviceId, initialIns.iadr, channel);
+                   showFilterWindow(Get.context!, instanceLabel, deviceId, initialIns.iadr, channel, isMotion: true);
                 }, iconSize: 40, fontSize: 15),
                 buildBottomIconButton(Icons.access_time, "Zaman", Colors.orange, () {
-                   showTimersWindow(Get.context!, instanceLabel, deviceId, initialIns.iadr, channel);
+                   showTimersWindow(Get.context!, instanceLabel, deviceId, initialIns.iadr, channel, stuckLabel: "Bekleme Süresi (dk)");
                 }, iconSize: 40, fontSize: 15),
                 buildBottomIconButton(Icons.back_hand_outlined, "C.Hold", Colors.deepPurple, () {
                   sendToOutbox({

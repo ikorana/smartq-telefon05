@@ -1,0 +1,23 @@
+Hello,
+
+Thank you for your feedback under Guideline 2.1(a) regarding no login option being available with the provided demo account. We identified the root cause and fixed it.
+
+Our app does not require a username/password login; a "demo" profile is created automatically on first install, and the user signs in by tapping that profile. Here is what was actually going wrong: tapping a profile on the Profile Management screen only applied a visual highlight — the actual action that selected the profile and moved to the Dashboard was tied to a very small touch target (just the avatar icon within the row). For someone opening the app for the first time, this gave the impression that there was no way to log in.
+
+In this version we made the following fixes:
+
+- On the Profile Management screen, tapping ANYWHERE on a user row now directly selects that profile and navigates to the Dashboard (Home screen).
+- Profile selection now always lands on the Dashboard regardless of where it was triggered from (first launch, or Settings > Profile Management).
+- We fixed crash risks in several device detail screens (rename, change room/icon) that stemmed from a stale screen reference discovered during testing.
+
+Steps to access the demo account:
+1. If the app has never been opened before, or no profile has been selected yet, the app goes directly to the "Profile Management" screen. There you will see an automatically created profile named "demo" — tapping it anywhere on its row will take you directly into the app's Dashboard (Home screen).
+2. If the app has been opened before and a profile is already selected, the app skips the Profile Management screen and opens directly to that user's Dashboard — this reflects that the selection is remembered persistently.
+3. The demo profile runs entirely on local sample data (rooms, devices, scenes, groups); it does not require connecting to a real device.
+
+Note: The "+" (Add New User) form on the Profile Management screen is a separate feature and is NOT required for review — the "demo" profile above is already provided for that purpose. Adding a new user intentionally requires the user's SmartQ Controller (the physical central control unit the app manages) to be present on the same local network. This is not an oversight but a deliberate security measure: if a new account could be added without being physically present on that controller's local network, it would create a serious security vulnerability for the entire smart home system (risk of remote, unauthorized account creation / device takeover). For this reason, this form is intended only for end users who own a real SmartQ Controller device, and is not expected to be used during the App Review process.
+
+Thank you for your review.
+
+Best regards,
+The SmartQ Home Team

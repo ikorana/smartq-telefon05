@@ -11,6 +11,8 @@ import '../user/userManagementService.dart';
 import '../screen/dashboard/dashboardController.dart';
 import '../main.dart';
 
+import 'device_card_base.dart';
+
 class RGBDevice extends BaseDevice {
   final RxInt level = 0.obs;
   final RxInt red = 255.obs;
@@ -49,7 +51,7 @@ class RGBDevice extends BaseDevice {
   static const List<IconData> lampIcons = [
     Icons.lightbulb, Icons.wb_incandescent, Icons.tungsten, Icons.highlight,
     Icons.fluorescent, Icons.emoji_objects, Icons.tips_and_updates, Icons.flare,
-    Icons.wb_sunny, Icons.bedtime, Icons.color_lens
+    Icons.wb_sunny, Icons.bedtime, Icons.palette
   ];
 
   RGBDevice({
@@ -187,7 +189,7 @@ class RGBDevice extends BaseDevice {
   }
 
   void _sendCommand(int val) { _sendToOutbox({"com": "arc_power", "adres": id, "gurup": 0, "power": val, "kanal": channel}); level.value = val; }
-  void _sendActionCommand() { _sendToOutbox({"com": "action", "adres": id, "gurup": 0, "komut": 5, "kanal": channel}); level.value = 254; }
+  void _sendActionCommand() { _sendToOutbox({"com": "action", "adres": id, "gurup": 0, "komut": 1, "kanal": channel}); level.value = 254; }
   void _sendOffCommand() { _sendToOutbox({"com": "action", "adres": id, "gurup": 0, "komut": 0, "kanal": channel}); level.value = 0; }
   void _sendOpenCommand() { _sendToOutbox({"com": "action", "adres": id, "gurup": 0, "komut": 3, "kanal": channel}); level.value = 254; }
   void _sendMaxCommand() { _sendToOutbox({"com": "action", "adres": id, "gurup": 0, "komut": 3, "kanal": channel}); level.value = 254; }
@@ -209,7 +211,7 @@ class RGBDevice extends BaseDevice {
   void _sendDaliGetConfigCommand(String command) { _sendToOutbox({"com": command, "adres": id, "kanal": channel}); }
   void _sendColorCommand(Color color, int w, int a, int f, int tp) { _sendToOutbox({"com": "set_color", "adres": id, "kanal": channel, "r": color.red, "g": color.green, "b": color.blue, "w": w, "a": a, "f": f, "type": tp}); red.value = color.red; green.value = color.green; blue.value = color.blue; whiteLevel.value = w; amberLevel.value = a; freshLevel.value = f; }
 
-  IconData _getIconData(int index) { if (index == 11) return Icons.visibility_off; if (index >= 0 && index < lampIcons.length) return lampIcons[index]; return Icons.color_lens; }
+  IconData _getIconData(int index) { if (index == 11) return Icons.visibility_off; if (index >= 0 && index < lampIcons.length) return lampIcons[index]; return Icons.palette; }
 
   void _showStatusDialog() {
     if (_isStatusDialogOpen) return;
@@ -291,12 +293,12 @@ class RGBDevice extends BaseDevice {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Padding(padding: const EdgeInsets.only(left: 8.0, top: 8.0), child: Row(children: [Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)), const SizedBox(width: 8), Obx(() => Text("(${value.value})", style: TextStyle(fontSize: 11, color: Get.theme.colorScheme.primary.withValues(alpha: 0.7))))])), Row(children: [Expanded(child: Obx(() { double minVal = (minRx?.value.toDouble() ?? 0.0).clamp(0.0, 254.0); return Slider(value: value.value.toDouble().clamp(minVal, 254), min: minVal, max: 254, onChanged: (v) => value.value = v.toInt()); })), IconButton(icon: const Icon(Icons.refresh), color: Get.theme.colorScheme.primary.withValues(alpha: 0.6), onPressed: onRefresh), IconButton(icon: const Icon(Icons.check_circle_outline), color: Get.theme.colorScheme.primary, onPressed: onApply)]), const Divider()]);
   }
 
-  void _showColorPickerDialog(BuildContext context) {
+  void _showColorPickerDialog() {
     _isColorLoading.value = true;
     _sendToOutbox({"com": "get_qkanal", "adres": id, "kanal": channel});
     _sendToOutbox({"com": "get_color", "adres": id, "kanal": channel, "type": 0});
     Future.delayed(const Duration(seconds: 3), () { if (_isColorLoading.value) _isColorLoading.value = false; });
-    final theme = Theme.of(context);
+    final theme = Get.theme;
     RxInt dialogR = red.value.obs; RxInt dialogG = green.value.obs; RxInt dialogB = blue.value.obs;
     RxInt dialogW = whiteLevel.value.obs; RxInt dialogA = amberLevel.value.obs; RxInt dialogF = freshLevel.value.obs;
     final rWorker = ever(red, (int val) => dialogR.value = val);
@@ -318,7 +320,7 @@ class RGBDevice extends BaseDevice {
         ]));
       }),
       actions: [
-        TextButton(onPressed: () => _showWAFDialog(context, dialogR, dialogG, dialogB, dialogW, dialogA, dialogF), child: Text("WAF", style: const TextStyle(color: Colors.grey, fontSize: 14, fontWeight: FontWeight.bold))),
+        TextButton(onPressed: () => _showWAFDialog(Get.context!, dialogR, dialogG, dialogB, dialogW, dialogA, dialogF), child: Text("WAF", style: const TextStyle(color: Colors.grey, fontSize: 14, fontWeight: FontWeight.bold))),
         TextButton(onPressed: () { _sendColorCommand(Color.fromARGB(255, dialogR.value, dialogG.value, dialogB.value), dialogW.value, dialogA.value, dialogF.value, 0); }, child: Text("uygula", style: TextStyle(color: theme.colorScheme.primary, fontSize: 14, fontWeight: FontWeight.bold))),
         TextButton(onPressed: () => Get.back(), child: Text("Kapat", style: const TextStyle(color: Colors.grey, fontSize: 14, fontWeight: FontWeight.bold))),
       ],
@@ -369,19 +371,19 @@ class RGBDevice extends BaseDevice {
         ]),
         const SizedBox(height: 15),
         SizedBox(width: dialogWidth - 40, child: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-          _buildTopBarIconBtn(Icons.edit_note, 'rename'.tr, () => _showRenameDialog(context), scale: iconScale),
-          _buildTopBarIconBtn(Icons.meeting_room_outlined, 'change_room'.tr, () => _showRoomSelectionDialog(context), scale: iconScale),
-          _buildTopBarIconBtn(Icons.visibility_off_outlined, 'gizle'.tr, () => _hideDevice(context), scale: iconScale),
+          _buildTopBarIconBtn(Icons.edit_note, 'rename'.tr, () => _showRenameDialog(), scale: iconScale),
+          _buildTopBarIconBtn(Icons.meeting_room_outlined, 'change_room'.tr, () => _showRoomSelectionDialog(), scale: iconScale),
+          _buildTopBarIconBtn(Icons.visibility_off_outlined, 'gizle'.tr, () => _hideDevice(), scale: iconScale),
           _buildTopBarIconBtn(Icons.settings_remote, 'get_switches'.tr, () => _showSwitchSelectionDialog(), scale: iconScale),
         ])),
         const Divider(),
       ]),
       content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
         Obx(() {
-          if (tempLevel.value == 0) return InkWell(onTap: () => _changeIcon(context), borderRadius: BorderRadius.circular(40), child: Icon(_getIconData(ico), size: 60, color: theme.colorScheme.onSurface.withValues(alpha: 0.2)));
+          if (tempLevel.value == 0) return InkWell(onTap: () => _changeIcon(), borderRadius: BorderRadius.circular(40), child: Icon(_getIconData(ico), size: 60, color: theme.colorScheme.onSurface.withValues(alpha: 0.2)));
           Color iconColor = Color.fromARGB(255, red.value, green.value, blue.value);
           double ratio = tempLevel.value / 254.0;
-          return InkWell(onTap: () => _changeIcon(context), borderRadius: BorderRadius.circular(40), child: Container(decoration: BoxDecoration(shape: BoxShape.circle, boxShadow: [BoxShadow(color: iconColor.withValues(alpha: 0.3 * ratio), blurRadius: 20 * ratio, spreadRadius: 10 * ratio)]), child: Icon(_getIconData(ico), size: 60, color: iconColor)));
+          return InkWell(onTap: () => _changeIcon(), borderRadius: BorderRadius.circular(40), child: Container(decoration: BoxDecoration(shape: BoxShape.circle, boxShadow: [BoxShadow(color: iconColor.withValues(alpha: 0.3 * ratio), blurRadius: 20 * ratio, spreadRadius: 10 * ratio)]), child: Icon(_getIconData(ico), size: 60, color: iconColor)));
         }),
         const SizedBox(height: 20),
         Obx(() => Column(children: [
@@ -395,7 +397,7 @@ class RGBDevice extends BaseDevice {
           _buildActionBtn(Icons.vertical_align_top, 'max'.tr, () => _sendMaxCommand()),
           _buildActionBtn(Icons.vertical_align_bottom, 'min'.tr, () => _sendMinCommand()),
           _buildActionBtn(Icons.fingerprint, 'identity'.tr, () => _sendIdentifyCommand()),
-          _buildActionBtn(Icons.color_lens, 'renk'.tr, () => _showColorPickerDialog(context)),
+          _buildActionBtn(Icons.color_lens, 'renk'.tr, () => _showColorPickerDialog()),
         ]),
       ])),
       actionsPadding: EdgeInsets.zero,
@@ -430,36 +432,36 @@ class RGBDevice extends BaseDevice {
     return ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: Get.theme.colorScheme.surface, foregroundColor: color ?? Get.theme.colorScheme.primary, elevation: 1, padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10), minimumSize: const Size(114, 0), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10), side: BorderSide(color: Colors.grey.withValues(alpha: 0.3)))), onPressed: onTap, child: Column(mainAxisSize: MainAxisSize.min, children: [Icon(icon, size: 26), const SizedBox(height: 5), Text(label, style: const TextStyle(fontSize: 14))]));
   }
 
-  void _hideDevice(BuildContext context) {
+  void _hideDevice() {
     Get.defaultDialog(title: 'gizle'.tr, middleText: 'device_hide_confirm'.tr, textConfirm: 'yes'.tr, textCancel: 'no'.tr, confirmTextColor: Colors.white, onConfirm: () { Get.find<UserManagementService>().updateDeviceIcon(id, channel, 11); Get.back(); Get.back(); });
   }
 
-  void _changeIcon(BuildContext context) {
-    final theme = Theme.of(context);
+  void _changeIcon() {
+    final theme = Get.theme;
     Get.defaultDialog(title: 'select_icon'.tr, backgroundColor: theme.scaffoldBackgroundColor, titleStyle: TextStyle(color: theme.colorScheme.onSurface), content: SizedBox(width: 300, child: Wrap(spacing: 15, runSpacing: 15, alignment: WrapAlignment.center, children: List.generate(lampIcons.length, (index) {
       final bool isSelected = ico == index;
-      return InkWell(onTap: () { Get.find<UserManagementService>().updateDeviceIcon(id, channel, index); Get.back(); Get.back(); _showDetailDialog(context); }, child: Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: isSelected ? theme.colorScheme.primary.withValues(alpha: 0.1) : Colors.transparent, borderRadius: BorderRadius.circular(10), border: Border.all(color: isSelected ? theme.colorScheme.primary : theme.colorScheme.onSurface.withValues(alpha: 0.1))), child: Icon(lampIcons[index], color: isSelected ? theme.colorScheme.primary : theme.colorScheme.onSurface, size: 30)));
+      return InkWell(onTap: () { Get.find<UserManagementService>().updateDeviceIcon(id, channel, index); Get.back(); Get.back(); _showDetailDialog(Get.context!); }, child: Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: isSelected ? theme.colorScheme.primary.withValues(alpha: 0.1) : Colors.transparent, borderRadius: BorderRadius.circular(10), border: Border.all(color: isSelected ? theme.colorScheme.primary : theme.colorScheme.onSurface.withValues(alpha: 0.1))), child: Icon(lampIcons[index], color: isSelected ? theme.colorScheme.primary : theme.colorScheme.onSurface, size: 30)));
     }))));
   }
 
-  void _showRenameDialog(BuildContext context) {
-    final theme = Theme.of(context);
+  void _showRenameDialog() {
+    final theme = Get.theme;
     final TextEditingController nameController = TextEditingController(text: name);
     Get.defaultDialog(backgroundColor: theme.scaffoldBackgroundColor, title: 'rename'.tr, titleStyle: TextStyle(color: theme.colorScheme.onSurface), content: Padding(padding: const EdgeInsets.symmetric(horizontal: 15), child: TextField(controller: nameController, autofocus: true, style: TextStyle(color: theme.colorScheme.onSurface), decoration: InputDecoration(hintText: 'name_hint'.tr, hintStyle: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: 0.4)), enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: theme.colorScheme.primary.withValues(alpha: 0.3)))))), confirm: ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: theme.colorScheme.primary), onPressed: () { if (nameController.text.isNotEmpty) { 
       this.name = nameController.text;
       Get.find<UserManagementService>().updateDeviceName(id, channel, nameController.text); 
       _sendSaveDeviceToBox();
-      Get.back(); Get.back(); _showDetailDialog(context); } }, child: Text('save'.tr, style: const TextStyle(color: Colors.white))), cancel: OutlinedButton(onPressed: () => Get.back(), child: Text('cancel'.tr, style: TextStyle(color: theme.colorScheme.primary))));
+      Get.back(); Get.back(); _showDetailDialog(Get.context!); } }, child: Text('save'.tr, style: const TextStyle(color: Colors.white))), cancel: OutlinedButton(onPressed: () => Get.back(), child: Text('cancel'.tr, style: TextStyle(color: theme.colorScheme.primary))));
   }
 
-  void _showRoomSelectionDialog(BuildContext context) {
-    final theme = Theme.of(context);
+  void _showRoomSelectionDialog() {
+    final theme = Get.theme;
     final userManager = Get.find<UserManagementService>();
     Get.bottomSheet(Container(padding: const EdgeInsets.all(20), decoration: BoxDecoration(color: theme.scaffoldBackgroundColor, borderRadius: const BorderRadius.vertical(top: Radius.circular(20))), child: Column(mainAxisSize: MainAxisSize.min, children: [Text('rooms'.tr, style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 18, fontWeight: FontWeight.bold)), const SizedBox(height: 15), Flexible(child: ListView.builder(shrinkWrap: true, itemCount: userManager.activeRooms.length, itemBuilder: (context, index) { final room = userManager.activeRooms[index]; return ListTile(leading: Icon(Icons.meeting_room_outlined, color: theme.colorScheme.primary), title: Text(room.name, style: TextStyle(color: theme.colorScheme.onSurface)), onTap: () { 
       this.roomId = room.id;
       userManager.updateDeviceRoom(id, channel, room.id); 
       _sendSaveDeviceToBox();
-      Get.back(); Get.back(); _showDetailDialog(context); }); }))])));
+      Get.back(); Get.back(); _showDetailDialog(Get.context!); }); }))])));
   }
 
   void _showSwitchSelectionDialog() {
@@ -544,104 +546,33 @@ class RGBDevice extends BaseDevice {
   @override
   Widget buildWidget() {
     final theme = Get.theme;
-    final controller = Get.find<DashboardController>();
 
     return Obx(() {
       final bool isOn = level.value > 0;
-      final bool isBlocked = _isInteractionBlocked.value;
-      final bool isRefreshing = _isRefreshingUI.value;
-      final bool isAllRooms = controller.selectedRoomId.value == null;
-      final bool hasRoom = roomId != 0 && roomId != 255;
 
-      Color borderColor = Colors.transparent;
-      double borderWidth = 1.2;
-      List<BoxShadow> shadows = [];
-
-      if (isRefreshing) {
-        borderColor = theme.colorScheme.primary;
-        borderWidth = 2.5;
-        shadows.add(
-          BoxShadow(
-            color: theme.colorScheme.primary.withValues(alpha: 0.4),
-            blurRadius: 12,
-            spreadRadius: 4,
-          )
-        );
-      } else if (isBlocked) {
-        borderColor = Colors.blue.withValues(alpha: 0.5);
-        borderWidth = 1.5;
-      } else if (isAllRooms && hasRoom && !isOn) {
-        borderColor = theme.colorScheme.primary.withValues(alpha: 0.45);
-        borderWidth = 2.2;
-      }
-
-      return Container(
-        width: 85,
-        height: btnHigh.value,
-        margin: const EdgeInsets.symmetric(horizontal: 2),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: isBlocked ? null : () {
-              if (isOn) {
-                _sendOffCommand();
-              } else {
-                if (!_isStatusFetched) {
-                  _sendGetLevelCommand();
-                } else {
-                  _sendActionCommand();
-                }
-              }
-            },
-            onLongPress: isBlocked ? null : () => _showDetailDialog(Get.context!),
-            borderRadius: BorderRadius.circular(15),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 400),
-                  width: 85,
-                  height: btnIcoHigh.value,
-                  decoration: BoxDecoration(
-                    color: (isAllRooms && hasRoom && !isOn && !isRefreshing && !isBlocked) 
-                        ? theme.colorScheme.primary.withValues(alpha: 0.06) 
-                        : Colors.transparent,
-                    borderRadius: BorderRadius.circular(15),
-                    border: Border.all(
-                      color: borderColor,
-                      width: borderWidth,
-                    ),
-                    boxShadow: shadows,
-                  ),
-                  child: Center(
-                    child: isBlocked
-                        ? const SizedBox(
-                            width: 32,
-                            height: 32,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.blue),
-                          )
-                        : Icon(
-                            _getIconData(ico),
-                            color: isOn ? Color.fromARGB(255, red.value, green.value, blue.value) : theme.colorScheme.onSurface.withValues(alpha: 0.2),
-                            size: 45,
-                          ),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  name ?? 'RGB Device',
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.onSurface,
-                  ),
-                ),
-              ],
-            ),
-          ),
+      return DeviceCardBase(
+        name: name ?? 'RGB Device',
+        id: id,
+        roomId: roomId,
+        isOn: isOn,
+        isBlocked: _isInteractionBlocked.value,
+        isRefreshing: _isRefreshingUI.value,
+        onTap: () {
+          if (isOn) {
+            _sendOffCommand();
+          } else {
+            if (!_isStatusFetched) {
+              _sendGetLevelCommand();
+            } else {
+              _sendActionCommand();
+            }
+          }
+        },
+        onLongPress: () => _showDetailDialog(Get.context!),
+        icon: Icon(
+          _getIconData(ico),
+          color: isOn ? Color.fromARGB(255, red.value, green.value, blue.value) : theme.colorScheme.onSurface.withValues(alpha: 0.2),
+          size: 70,
         ),
       );
     });

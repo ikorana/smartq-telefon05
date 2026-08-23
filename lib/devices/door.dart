@@ -156,7 +156,7 @@ class DoorDevice extends BaseDevice {
   void _sendDaliGetConfigCommand(String cmd) => _sendToOutbox({"com": cmd, "adres": id, "kanal": channel});
   void _sendDaliConfigCommand(String cmd, int val) => _sendToOutbox({"com": cmd, "adres": id, "kanal": channel, "val": val});
 
-  void _hideDevice(BuildContext context) {
+  void _hideDevice() {
     Get.defaultDialog(
       title: 'gizle'.tr,
       middleText: 'device_hide_confirm'.tr,
@@ -411,19 +411,19 @@ class DoorDevice extends BaseDevice {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Padding(padding: const EdgeInsets.only(left: 8.0, top: 8.0), child: Row(children: [Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)), const SizedBox(width: 8), Obx(() => Text("(${value.value})", style: TextStyle(fontSize: 11, color: Get.theme.colorScheme.primary.withValues(alpha: 0.7))))])), Row(children: [Expanded(child: Obx(() => Slider(value: value.value.toDouble().clamp((minRx?.value.toDouble() ?? 0.0).clamp(0.0, 254.0), 254), min: (minRx?.value.toDouble() ?? 0.0).clamp(0.0, 254.0), max: 254, onChanged: (v) => value.value = v.toInt()))), IconButton(icon: const Icon(Icons.refresh), color: Get.theme.colorScheme.primary.withValues(alpha: 0.6), onPressed: onRefresh), IconButton(icon: const Icon(Icons.check_circle_outline), color: Get.theme.colorScheme.primary, onPressed: onApply)]), const Divider()]);
   }
 
-  void _showRenameDialog(BuildContext context) {
-    final theme = Theme.of(context);
+  void _showRenameDialog() {
+    final theme = Get.theme;
     final TextEditingController nameController = TextEditingController(text: name);
     Get.defaultDialog(
       backgroundColor: theme.scaffoldBackgroundColor, title: 'rename'.tr, titleStyle: TextStyle(color: theme.colorScheme.onSurface),
       content: Padding(padding: const EdgeInsets.symmetric(horizontal: 15), child: TextField(controller: nameController, autofocus: true, style: TextStyle(color: theme.colorScheme.onSurface), decoration: InputDecoration(hintText: 'name_hint'.tr, hintStyle: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.4)), enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: theme.colorScheme.primary.withValues(alpha: 0.3)))))),
-      confirm: ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: theme.colorScheme.primary), onPressed: () { if (nameController.text.isNotEmpty) { name = nameController.text; Get.find<UserManagementService>().updateDeviceName(id, channel, name!); _sendSaveDeviceToBox(); Get.back(); Get.back(); _showDetailDialog(context); } }, child: Text('save'.tr, style: const TextStyle(color: Colors.white))),
+      confirm: ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: theme.colorScheme.primary), onPressed: () { if (nameController.text.isNotEmpty) { name = nameController.text; Get.find<UserManagementService>().updateDeviceName(id, channel, name!); _sendSaveDeviceToBox(); Get.back(); Get.back(); _showDetailDialog(Get.context!); } }, child: Text('save'.tr, style: const TextStyle(color: Colors.white))),
       cancel: OutlinedButton(onPressed: () => Get.back(), child: Text('cancel'.tr, style: TextStyle(color: theme.colorScheme.primary))),
     );
   }
 
-  void _showRoomSelectionDialog(BuildContext context) {
-    final theme = Theme.of(context);
+  void _showRoomSelectionDialog() {
+    final theme = Get.theme;
     final userManager = Get.find<UserManagementService>();
     Get.bottomSheet(
       Container(
@@ -435,7 +435,7 @@ class DoorDevice extends BaseDevice {
             const SizedBox(height: 15),
             Flexible(child: ListView.builder(shrinkWrap: true, itemCount: userManager.activeRooms.length, itemBuilder: (context, index) {
               final room = userManager.activeRooms[index];
-              return ListTile(leading: Icon(Icons.meeting_room_outlined, color: theme.colorScheme.primary), title: Text(room.name, style: TextStyle(color: theme.colorScheme.onSurface)), onTap: () { roomId = room.id; userManager.updateDeviceRoom(id, channel, room.id); _sendSaveDeviceToBox(); Get.back(); Get.back(); _showDetailDialog(context); });
+              return ListTile(leading: Icon(Icons.meeting_room_outlined, color: theme.colorScheme.primary), title: Text(room.name, style: TextStyle(color: theme.colorScheme.onSurface)), onTap: () { roomId = room.id; userManager.updateDeviceRoom(id, channel, room.id); _sendSaveDeviceToBox(); Get.back(); Get.back(); _showDetailDialog(Get.context!); });
             })),
           ],
         ),
@@ -505,7 +505,7 @@ class DoorDevice extends BaseDevice {
               ],
             ),
             const SizedBox(height: 15),
-            SizedBox(width: dialogWidth - 40, child: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [_buildTopBarIconBtn(Icons.edit_note, 'rename'.tr, () => _showRenameDialog(context), scale: iconScale), _buildTopBarIconBtn(Icons.meeting_room_outlined, 'change_room'.tr, () => _showRoomSelectionDialog(context), scale: iconScale), _buildTopBarIconBtn(Icons.visibility_off_outlined, 'gizle'.tr, () => _hideDevice(context), scale: iconScale), _buildTopBarIconBtn(Icons.settings_remote, 'get_switches'.tr, () => _showSwitchSelectionDialog(), scale: iconScale)])),
+            SizedBox(width: dialogWidth - 40, child: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [_buildTopBarIconBtn(Icons.edit_note, 'rename'.tr, () => _showRenameDialog(), scale: iconScale), _buildTopBarIconBtn(Icons.meeting_room_outlined, 'change_room'.tr, () => _showRoomSelectionDialog(), scale: iconScale), _buildTopBarIconBtn(Icons.visibility_off_outlined, 'gizle'.tr, () => _hideDevice(), scale: iconScale), _buildTopBarIconBtn(Icons.settings_remote, 'get_switches'.tr, () => _showSwitchSelectionDialog(), scale: iconScale)])),
             const Divider(),
           ],
         ),

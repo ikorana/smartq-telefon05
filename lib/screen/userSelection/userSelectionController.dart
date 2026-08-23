@@ -24,6 +24,9 @@ class UserSelectionController extends GetxController {
   final RxBool isScanning = false.obs;
 
   final RxString highlightedName = "".obs;
+  // "Yeni Kullanıcı" formunda lisans alanı varsayılan olarak readonly'dir —
+  // popup üstündeki avatara 3 kez dokununca kilidi açılır.
+  final RxInt licenseAvatarTapCount = 0.obs;
   final RxString _currentNameInput = "".obs; // UI reaktifliği için ismi Rx olarak takip ediyoruz
 
   String? editingUserId;
@@ -94,11 +97,15 @@ class UserSelectionController extends GetxController {
       Get.find<ThemeService>().changeTheme(_userManager.activeUser.value!.themeIndex);
     }
     
-    // Eğer rootGate içindeysek sayfa kapatma yapma (RootGate Obx ile sayfa değiştirir)
-    // Eğer başka bir yerden profil değiştirmeye gelindiyse geri git
-    if (Get.currentRoute != '/root') {
-      Get.back();
-    }
+    // Üstte açık duran ekranları (Ayarlar/Cihaz Kurulumu, Profil Yönetimi)
+    // kapatıp yığının en altındaki RootGate/Dashboard'a dön. Get.offAllNamed
+    // KULLANMIYORUZ — o, /root'u tamamen yeniden kurup eski DashboardController'ı
+    // henüz ekrandaki DeviceCardBase widget'ları hâlâ ona referans tutarken
+    // siliyordu ("DashboardController not found" crash'i). activeRooms/
+    // activeDevices zaten paylaşımlı RxList olduğu için (UserManagementService),
+    // Dashboard'ı yeniden kurmadan da yeni kullanıcının verisiyle otomatik
+    // güncelleniyor.
+    Get.until((route) => route.isFirst);
   }
 
   void startEdit(String name) {
@@ -274,8 +281,9 @@ class UserSelectionController extends GetxController {
     _currentNameInput.value = "";
     discoveredWifi = null;
     discoveredAi = null;
+    licenseAvatarTapCount.value = 0;
   }
-  
+
   void cancelDialog() {
     _clearFields();
     Get.back();

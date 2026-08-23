@@ -70,7 +70,7 @@ class AnahtarDevice extends BaseDevice {
         isBlocked: _isInteractionBlocked.value,
         isRefreshing: _isRefreshingUI.value,
         onTap: () => _showInstancesDialog(),
-        onLongPress: () => _showRenameDialog(Get.context!),
+        onLongPress: () => _showRenameDialog(),
         icon: Icon(
           Icons.account_tree_outlined,
           color: theme.colorScheme.onSurface.withValues(alpha: 0.2),
@@ -375,8 +375,8 @@ class AnahtarDevice extends BaseDevice {
     });
   }
 
-  void _showRenameDialog(BuildContext context) {
-    final theme = Theme.of(context);
+  void _showRenameDialog() {
+    final theme = Get.theme;
     final TextEditingController nameController = TextEditingController(text: name);
 
     Get.defaultDialog(

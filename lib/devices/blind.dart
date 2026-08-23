@@ -196,7 +196,7 @@ class BlindDevice extends BaseDevice {
     return Icons.blinds;
   }
 
-  void _hideDevice(BuildContext context) {
+  void _hideDevice() {
     Get.defaultDialog(
       title: 'gizle'.tr,
       middleText: 'device_hide_confirm'.tr,
@@ -656,8 +656,8 @@ class BlindDevice extends BaseDevice {
     );
   }
 
-  void _changeIcon(BuildContext context) {
-    final theme = Theme.of(context);
+  void _changeIcon() {
+    final theme = Get.theme;
     Get.defaultDialog(
       title: 'select_icon'.tr,
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -676,7 +676,7 @@ class BlindDevice extends BaseDevice {
                 Get.find<UserManagementService>().updateDeviceIcon(id, channel, index);
                 _sendSaveDeviceToBox();
                 Get.back(); Get.back();
-                _showDetailDialog(context);
+                _showDetailDialog(Get.context!);
               },
               child: Container(
                 padding: const EdgeInsets.all(10),
@@ -694,8 +694,8 @@ class BlindDevice extends BaseDevice {
     );
   }
 
-  void _showRenameDialog(BuildContext context) {
-    final theme = Theme.of(context);
+  void _showRenameDialog() {
+    final theme = Get.theme;
     final TextEditingController nameController = TextEditingController(text: name);
     Get.defaultDialog(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -722,7 +722,7 @@ class BlindDevice extends BaseDevice {
             Get.find<UserManagementService>().updateDeviceName(id, channel, name!);
             _sendSaveDeviceToBox();
             Get.back(); Get.back();
-            _showDetailDialog(context);
+            _showDetailDialog(Get.context!);
           }
         },
         child: Text('save'.tr, style: const TextStyle(color: Colors.white)),
@@ -731,8 +731,8 @@ class BlindDevice extends BaseDevice {
     );
   }
 
-  void _showRoomSelectionDialog(BuildContext context) {
-    final theme = Theme.of(context);
+  void _showRoomSelectionDialog() {
+    final theme = Get.theme;
     final userManager = Get.find<UserManagementService>();
     Get.bottomSheet(
       Container(
@@ -753,7 +753,7 @@ class BlindDevice extends BaseDevice {
                   userManager.updateDeviceRoom(id, channel, room.id);
                   _sendSaveDeviceToBox();
                   Get.back(); Get.back();
-                  _showDetailDialog(context);
+                  _showDetailDialog(Get.context!);
                 },
               );
             })),
@@ -892,9 +892,9 @@ class BlindDevice extends BaseDevice {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  _buildTopBarIconBtn(Icons.edit_note, 'rename'.tr, () => _showRenameDialog(context), scale: iconScale),
-                  _buildTopBarIconBtn(Icons.meeting_room_outlined, 'change_room'.tr, () => _showRoomSelectionDialog(context), scale: iconScale),
-                  _buildTopBarIconBtn(Icons.visibility_off_outlined, 'gizle'.tr, () => _hideDevice(context), scale: iconScale),
+                  _buildTopBarIconBtn(Icons.edit_note, 'rename'.tr, () => _showRenameDialog(), scale: iconScale),
+                  _buildTopBarIconBtn(Icons.meeting_room_outlined, 'change_room'.tr, () => _showRoomSelectionDialog(), scale: iconScale),
+                  _buildTopBarIconBtn(Icons.visibility_off_outlined, 'gizle'.tr, () => _hideDevice(), scale: iconScale),
                   _buildTopBarIconBtn(Icons.settings_remote, 'get_switches'.tr, () => _showSwitchSelectionDialog(), scale: iconScale),
                 ],
               ),
@@ -927,7 +927,7 @@ class BlindDevice extends BaseDevice {
             Obx(() {
               final bool isOpen = tempLevel.value > 0;
               return InkWell(
-                onTap: () => _changeIcon(context),
+                onTap: () => _changeIcon(),
                 borderRadius: BorderRadius.circular(40),
                 child: Icon(
                   _getIconData(ico),

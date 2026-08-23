@@ -47,7 +47,13 @@ class UserProfileDialog {
           const SizedBox(height: 12),
           _buildModernTextField(context: context, controller: controller.mqttController, label: 'mqtt_broker_label'.tr, icon: Icons.cloud_queue),
           const SizedBox(height: 12),
-          _buildModernTextField(context: context, controller: controller.licController, label: 'license_label'.tr, icon: Icons.vpn_key_outlined),
+          _buildModernTextField(
+            context: context,
+            controller: controller.licController,
+            label: 'license_label'.tr,
+            icon: Icons.vpn_key_outlined,
+            readOnly: !isEdit && controller.licenseAvatarTapCount.value < 3,
+          ),
         ];
 
         // Seçim alanlarını (Dil, Tema, Admin) ortak bir widget olarak tanımlıyoruz
@@ -165,10 +171,15 @@ class UserProfileDialog {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          CircleAvatar(
-                            radius: 20,
-                            backgroundColor: currentTheme.colorScheme.surface,
-                            child: Icon(Icons.person, size: 25, color: currentTheme.colorScheme.primary),
+                          GestureDetector(
+                            // Lisans alanının readonly kilidini açmak için gizli bir
+                            // erişim: bu avatara 3 kez dokununca kilit kalkar.
+                            onTap: () => controller.licenseAvatarTapCount.value++,
+                            child: CircleAvatar(
+                              radius: 20,
+                              backgroundColor: currentTheme.colorScheme.surface,
+                              child: Icon(Icons.person, size: 25, color: currentTheme.colorScheme.primary),
+                            ),
                           ),
                           const SizedBox(width: 15),
                           Text(
@@ -266,24 +277,26 @@ class UserProfileDialog {
   }
 
   static Widget _buildModernTextField({
-    required BuildContext context, 
-    required TextEditingController controller, 
-    required String label, 
-    required IconData icon, 
+    required BuildContext context,
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
     Widget? suffix,
     TextInputType keyboardType = TextInputType.text,
+    bool readOnly = false,
   }) {
-    final theme = Theme.of(context); 
+    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 2),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface, 
+        color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(15),
         border: theme.brightness == Brightness.light ? Border.all(color: theme.colorScheme.primary.withOpacity(0.1)) : null,
       ),
       child: TextField(
         controller: controller,
         keyboardType: keyboardType,
+        readOnly: readOnly,
         style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 14),
         decoration: InputDecoration(
           border: InputBorder.none,

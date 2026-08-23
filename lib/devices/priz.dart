@@ -670,9 +670,9 @@ class PrizDevice extends BaseDevice {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  _buildTopBarIconBtn(Icons.edit_note, 'rename'.tr, () => _showRenameDialog(context), scale: iconScale),
-                  _buildTopBarIconBtn(Icons.meeting_room_outlined, 'change_room'.tr, () => _showRoomSelectionDialog(context), scale: iconScale),
-                  _buildTopBarIconBtn(Icons.visibility_off_outlined, 'gizle'.tr, () => _hideDevice(context), scale: iconScale),
+                  _buildTopBarIconBtn(Icons.edit_note, 'rename'.tr, () => _showRenameDialog(), scale: iconScale),
+                  _buildTopBarIconBtn(Icons.meeting_room_outlined, 'change_room'.tr, () => _showRoomSelectionDialog(), scale: iconScale),
+                  _buildTopBarIconBtn(Icons.visibility_off_outlined, 'gizle'.tr, () => _hideDevice(), scale: iconScale),
                   _buildTopBarIconBtn(Icons.settings_remote, 'get_switches'.tr, () => _showSwitchSelectionDialog(), scale: iconScale),
                 ],
               ),
@@ -780,26 +780,26 @@ class PrizDevice extends BaseDevice {
     return ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: Get.theme.colorScheme.surface, foregroundColor: color ?? Get.theme.colorScheme.primary, elevation: 1, padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10), minimumSize: const Size(114, 0), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10), side: BorderSide(color: Colors.grey.withValues(alpha: 0.3)))), onPressed: onTap, child: Column(mainAxisSize: MainAxisSize.min, children: [Icon(icon, size: 26), const SizedBox(height: 5), Text(label, style: const TextStyle(fontSize: 14))]));
   }
 
-  void _hideDevice(BuildContext context) {
+  void _hideDevice() {
     Get.defaultDialog(
       title: 'gizle'.tr, middleText: 'device_hide_confirm'.tr, textConfirm: 'yes'.tr, textCancel: 'no'.tr, confirmTextColor: Colors.white,
       onConfirm: () { Get.find<UserManagementService>().updateDeviceIcon(id, channel, 11); Get.back(); Get.back(); },
     );
   }
 
-  void _showRenameDialog(BuildContext context) {
-    final theme = Theme.of(context);
+  void _showRenameDialog() {
+    final theme = Get.theme;
     final TextEditingController nameController = TextEditingController(text: name);
     Get.defaultDialog(
       backgroundColor: theme.scaffoldBackgroundColor, title: 'rename'.tr, titleStyle: TextStyle(color: theme.colorScheme.onSurface),
       content: Padding(padding: const EdgeInsets.symmetric(horizontal: 15), child: TextField(controller: nameController, autofocus: true, style: TextStyle(color: theme.colorScheme.onSurface), decoration: InputDecoration(hintText: 'name_hint'.tr, hintStyle: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: 0.4)), enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: theme.colorScheme.primary.withValues(alpha: 0.3)))))),
-      confirm: ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: theme.colorScheme.primary), onPressed: () { if (nameController.text.isNotEmpty) { final newName = nameController.text; this.name = newName; Get.find<UserManagementService>().updateDeviceName(id, channel, newName); _sendSaveDeviceToBox(); Get.back(); Get.back(); _showDetailDialog(context); } }, child: Text('save'.tr, style: const TextStyle(color: Colors.white))),
+      confirm: ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: theme.colorScheme.primary), onPressed: () { if (nameController.text.isNotEmpty) { final newName = nameController.text; this.name = newName; Get.find<UserManagementService>().updateDeviceName(id, channel, newName); _sendSaveDeviceToBox(); Get.back(); Get.back(); _showDetailDialog(Get.context!); } }, child: Text('save'.tr, style: const TextStyle(color: Colors.white))),
       cancel: OutlinedButton(onPressed: () => Get.back(), child: Text('cancel'.tr, style: TextStyle(color: theme.colorScheme.primary))),
     );
   }
 
-  void _showRoomSelectionDialog(BuildContext context) {
-    final theme = Theme.of(context);
+  void _showRoomSelectionDialog() {
+    final theme = Get.theme;
     final userManager = Get.find<UserManagementService>();
     Get.bottomSheet(
       Container(
@@ -809,7 +809,7 @@ class PrizDevice extends BaseDevice {
           children: [
             Text('rooms'.tr, style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 15),
-            Flexible(child: ListView.builder(shrinkWrap: true, itemCount: userManager.activeRooms.length, itemBuilder: (context, index) { final room = userManager.activeRooms[index]; return ListTile(leading: Icon(Icons.meeting_room_outlined, color: theme.colorScheme.primary), title: Text(room.name, style: TextStyle(color: theme.colorScheme.onSurface)), onTap: () { this.roomId = room.id; userManager.updateDeviceRoom(id, channel, room.id); _sendSaveDeviceToBox(); Get.back(); Get.back(); _showDetailDialog(context); }); })),
+            Flexible(child: ListView.builder(shrinkWrap: true, itemCount: userManager.activeRooms.length, itemBuilder: (context, index) { final room = userManager.activeRooms[index]; return ListTile(leading: Icon(Icons.meeting_room_outlined, color: theme.colorScheme.primary), title: Text(room.name, style: TextStyle(color: theme.colorScheme.onSurface)), onTap: () { this.roomId = room.id; userManager.updateDeviceRoom(id, channel, room.id); _sendSaveDeviceToBox(); Get.back(); Get.back(); _showDetailDialog(Get.context!); }); })),
           ],
         ),
       ),

@@ -121,8 +121,8 @@ class ThermostatDevice extends BaseDevice {
     Get.find<DataBridgeService>().send(msg, receiver: receiver, forceMqtt: forceMqtt);
   }
 
-  void _showRenameDialog(BuildContext context) {
-    final theme = Theme.of(context);
+  void _showRenameDialog() {
+    final theme = Get.theme;
     final TextEditingController nameController = TextEditingController(text: name);
 
     Get.defaultDialog(
@@ -159,7 +159,7 @@ class ThermostatDevice extends BaseDevice {
             
             Get.back();
             Get.back();
-            _showDetailDialog(context);
+            _showDetailDialog(Get.context!);
           }
         },
         child: Text('save'.tr, style: const TextStyle(color: Colors.white)),
@@ -171,8 +171,8 @@ class ThermostatDevice extends BaseDevice {
     );
   }
 
-  void _showRoomSelectionDialog(BuildContext context) {
-    final theme = Theme.of(context);
+  void _showRoomSelectionDialog() {
+    final theme = Get.theme;
     final userManager = Get.find<UserManagementService>();
 
     Get.bottomSheet(
@@ -209,7 +209,7 @@ class ThermostatDevice extends BaseDevice {
                       
                       Get.back();
                       Get.back();
-                      _showDetailDialog(context);
+                      _showDetailDialog(Get.context!);
                     },
                   );
                 },
@@ -338,8 +338,8 @@ class ThermostatDevice extends BaseDevice {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      _buildTopBarIconBtn(Icons.edit_note, 'rename'.tr, () => _showRenameDialog(context), scale: iconScale),
-                      _buildTopBarIconBtn(Icons.meeting_room_outlined, 'change_room'.tr, () => _showRoomSelectionDialog(context), scale: iconScale),
+                      _buildTopBarIconBtn(Icons.edit_note, 'rename'.tr, () => _showRenameDialog(), scale: iconScale),
+                      _buildTopBarIconBtn(Icons.meeting_room_outlined, 'change_room'.tr, () => _showRoomSelectionDialog(), scale: iconScale),
                     ],
                   ),
                   const Divider(),

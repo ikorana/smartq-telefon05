@@ -101,14 +101,12 @@ class UserSelectionPage extends GetView<UserSelectionController> {
           color: Colors.transparent,
           child: InkWell(
             borderRadius: BorderRadius.circular(20),
-            onTap: () => controller.highlightUser(name),
+            onTap: () => controller.selectUser(name),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
               child: Row(
                 children: [
-                  GestureDetector(
-                    onTap: () => controller.selectUser(name),
-                    child: Container(
+                    Container(
                       width: 56,
                       height: 56,
                       decoration: BoxDecoration(
@@ -129,7 +127,6 @@ class UserSelectionPage extends GetView<UserSelectionController> {
                         size: 28,
                       ),
                     ),
-                  ),
                   const SizedBox(width: 15),
                   Expanded(
                     child: Column(

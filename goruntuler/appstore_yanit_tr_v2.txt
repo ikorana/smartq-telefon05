@@ -1,0 +1,23 @@
+Merhaba,
+
+Guideline 2.1(a) kapsamında bildirdiğiniz "demo hesapla giriş seçeneği bulunamadı" geri bildiriminiz için teşekkür ederiz. Sorunun kaynağını inceledik ve düzelttik.
+
+Uygulamamız kullanıcı adı/şifre ile giriş gerektirmiyor; kurulumda otomatik olarak bir "demo" profili oluşturuluyor ve kullanıcı bu profile dokunarak uygulamaya giriyor. Sorunun kaynağı şuydu: Profil Yönetimi ekranındaki bir profile dokunmak, sadece görsel bir vurgulama (highlight) yapıyordu — profili gerçekten seçip Ana Ekrana geçiren asıl işlem, satırın çok küçük bir bölgesine (sadece avatar ikonuna) özel olarak bağlıydı. Bu, ilk kez uygulamayı açan bir kullanıcı için "giriş yapma yolu yok" izlenimine yol açıyordu.
+
+Bu sürümde şu düzeltmeleri yaptık:
+
+- Profil Yönetimi ekranında artık bir kullanıcı satırının HERHANGİ bir yerine dokunmak, o profili doğrudan seçip Ana Ekrana (Dashboard) yönlendiriyor.
+- Profil seçimi, uygulamanın neresinden tetiklenirse tetiklensin (ilk açılış, Ayarlar > Profil Yönetimi) kullanıcıyı her zaman doğrudan Ana Ekrana götürüyor.
+- Test sırasında ortaya çıkan, bazı cihaz detay ekranlarında (yeniden adlandırma, oda/ikon değiştirme) kararsız (stale) ekran referansından kaynaklanan çökme risklerini giderdik.
+
+Demo hesaba erişim adımları:
+1. Uygulama daha önce hiç açılmamışsa veya daha önce bir profil seçilmemişse, uygulama doğrudan "Profil Yönetimi" ekranına gider. Burada otomatik oluşturulmuş "demo" adlı bir profil göreceksiniz — bu profile (satırın herhangi bir yerine) dokunmanız, doğrudan uygulamanın Ana Ekranına (Dashboard) giriş yapmanızı sağlayacaktır.
+2. Uygulama daha önce açılmış ve bir profil zaten seçilmişse, uygulama Profil Yönetimi ekranını atlar ve doğrudan seçili kullanıcının Ana Ekranı (Dashboard) ile açılır — bu, seçimin kalıcı olarak hatırlandığını gösterir.
+3. Demo profili tamamen yerel örnek verilerle (oda, cihaz, sahne, grup) çalışır; gerçek bir cihaza bağlanmaya ihtiyaç duymaz.
+
+Not: Profil Yönetimi ekranındaki "+" (Yeni Kullanıcı Ekle) formu ayrı bir işlevdir ve inceleme için gerekli DEĞİLDİR — yukarıdaki "demo" profili bu amaç için zaten hazırdır. Yeni bir kullanıcı eklemek, kullanıcının SmartQ Controller cihazının (uygulamanın kontrol ettiği fiziksel ana kontrol ünitesi) aynı yerel ağda bulunmasını KASITLI olarak şart koşar. Bu bir eksiklik değil, bilinçli bir güvenlik önlemidir: eğer bir kullanıcı, o kontrolörün bulunduğu yerel ağda fiziksel olarak bulunmadan yeni bir hesap ekleyebilseydi, bu durum tüm akıllı ev sistemi için ciddi bir güvenlik açığı oluştururdu (uzaktan, izinsiz hesap ekleme/cihaz ele geçirme riski). Bu yüzden bu form, sadece gerçek bir SmartQ Controller cihazına sahip son kullanıcılar için tasarlanmıştır ve App Review sürecinde kullanılması beklenmez.
+
+Değerlendirmeniz için teşekkür ederiz.
+
+Saygılarımızla,
+SmartQ Home Ekibi

@@ -171,7 +171,7 @@ Widget buildTimerButton(String label, int value, VoidCallback onTap) {
   );
 }
 
-void showFilterWindow(BuildContext context, String label, int id, int insid, int kanal) {
+void showFilterWindow(BuildContext context, String label, int id, int insid, int kanal, {bool isMotion = false}) {
   final theme = Get.theme;
   // ... (içerik aynı başlangıç)
   final RxBool isLoading = true.obs;
@@ -263,16 +263,23 @@ void showFilterWindow(BuildContext context, String label, int id, int insid, int
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                   child: Column(
-                    children: [
-                      buildChkNO(g0, "Released", "Tuş Bırakıldığında bilgi gönder", helpYaz),
-                      buildChkNO(g1, "Pressed", "Tuşa basıldığında bilgi gönder ", helpYaz),
-                      buildChkNO(g2, "Short Press", "Desteklenmiyor ", helpYaz),
-                      buildChkNO(g3, "Double Press", "Desteklenmiyor", helpYaz),
-                      buildChkNO(g4, "Long Press Start", "Uzun Basıldıgında bilgi gönder", helpYaz),
-                      buildChkNO(g5, "Long Repeat", "Uzun basılmaya devam süresince bilgi gönder", helpYaz),
-                      buildChkNO(g6, "Long Stop", "Uzun basma bittiğinde bilgi gönder", helpYaz),
-                      buildChkNO(g7, "Stuct/Free", "Desteklenmiyor", helpYaz),
-                    ],
+                    children: isMotion
+                        ? [
+                            buildChkNO(g0, "Occupied", "Oda boşken ilk hareket algılandığında bir kez bilgi gönder — bir 'oturum' başlatır. Oturum devam ederken (Stuck süresi dolmadan) yeni hareket gelirse süre yenilenir ama tekrar Occupied gönderilmez.", helpYaz),
+                            buildChkNO(g1, "Vacant", "Son hareketten itibaren 'Zaman' ekranındaki Stuck süresi boyunca hiç hareket tekrarlanmazsa (ya da C.Hold ile iptal edilirse) oturum sona erer ve bir kez bilgi gönderilir.", helpYaz),
+                            buildChkNO(g3, "Movement", "Sensör her hareket algıladığında, tekrar eden darbelerde bile, her seferinde bilgi gönder", helpYaz),
+                            buildChkNO(g4, "No Movement", "Sensör her hareketsizliğe geçtiğinde, tekrar eden darbelerde bile, her seferinde bilgi gönder", helpYaz),
+                          ]
+                        : [
+                            buildChkNO(g0, "Released", "Tuş Bırakıldığında bilgi gönder", helpYaz),
+                            buildChkNO(g1, "Pressed", "Tuşa basıldığında bilgi gönder ", helpYaz),
+                            buildChkNO(g2, "Short Press", "Kısa basışta bilgi gönder", helpYaz),
+                            buildChkNO(g3, "Double Press", "Çift basışta bilgi gönder", helpYaz),
+                            buildChkNO(g4, "Long Press Start", "Uzun Basıldıgında bilgi gönder", helpYaz),
+                            buildChkNO(g5, "Long Repeat", "Uzun basılmaya devam süresince bilgi gönder", helpYaz),
+                            buildChkNO(g6, "Long Stop", "Uzun basma bittiğinde bilgi gönder", helpYaz),
+                            buildChkNO(g7, "Stuct/Free", "Tuş sıkışmasında bilgi gönder", helpYaz),
+                          ],
                   ),
                 ),
               ),
@@ -321,7 +328,7 @@ void showFilterWindow(BuildContext context, String label, int id, int insid, int
   });
 }
 
-void showTimersWindow(BuildContext context, String label, int id, int insid, int kanal) {
+void showTimersWindow(BuildContext context, String label, int id, int insid, int kanal, {bool stuckOnly = false, String stuckLabel = "Stuck"}) {
   final theme = Get.theme;
   // ... (içerik aynı başlangıç)
   final RxBool isLoading = true.obs;
@@ -392,17 +399,23 @@ void showTimersWindow(BuildContext context, String label, int id, int insid, int
               Expanded(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    buildTimerButton("Short", tshort.value, () async {
-                      showNumberInputDialog("Short Timer", tshort.value, (val) => tshort.value = val);
-                    }),
-                    buildTimerButton("Long Repeat", trepeat.value, () async {
-                      showNumberInputDialog("Repeat Timer", trepeat.value, (val) => trepeat.value = val);
-                    }),
-                    buildTimerButton("Stuck", tstuck.value, () async {
-                      showNumberInputDialog("Stuck Timer", tstuck.value,(val) => tstuck.value = val);
-                    }),
-                  ],
+                  children: stuckOnly
+                      ? [
+                          buildTimerButton(stuckLabel, tstuck.value, () async {
+                            showNumberInputDialog(stuckLabel, tstuck.value,(val) => tstuck.value = val);
+                          }),
+                        ]
+                      : [
+                          buildTimerButton("Short", tshort.value, () async {
+                            showNumberInputDialog("Short Timer", tshort.value, (val) => tshort.value = val);
+                          }),
+                          buildTimerButton("Long Repeat", trepeat.value, () async {
+                            showNumberInputDialog("Repeat Timer", trepeat.value, (val) => trepeat.value = val);
+                          }),
+                          buildTimerButton(stuckLabel, tstuck.value, () async {
+                            showNumberInputDialog(stuckLabel, tstuck.value,(val) => tstuck.value = val);
+                          }),
+                        ],
                 ),
               ),
               const SizedBox(height: 15),
