@@ -1,0 +1,19 @@
+Merhaba,
+
+Guideline 5.2.1 (Fikri Mülkiyet) kapsamındaki geri bildiriminiz için teşekkür ederiz. Konuyu inceledik ve hem kanıt sunuyor hem de kaynağında bir düzeltme yapıyoruz.
+
+"SmartQ" ismi, şirketimize (İMS Yazılım Otomasyon Sistemleri Elektronik Taşımacılık Medikal Sanayi ve Ticaret Limited Şirketi) ait özgün bir marka olup hiçbir üçüncü tarafa ait değildir ve hiçbir üçüncü tarafın hakkını ihlal etmemektedir. Uygulama ve uygulamanın bağlandığı donanım (Ana Kutu ev otomasyon kontrolörü), tamamen şirketimiz tarafından tasarlanmış, geliştirilmiş ve üretilmiştir.
+
+Kanıt olarak:
+- "SmartQ" kelime markası için Türk Patent ve Marka Kurumu'na yapılmış resmi başvuruyu ekte sunuyoruz (Başvuru No: 2026/102000, Evrak Tarihi: 05.08.2026, Başvuru Sahibi: İMS Yazılım Otomasyon Sistemleri Elektronik Taşımacılık Medikal Sanayi ve Ticaret Limited Şirketi, Sınıflar: 09 ve 35 — yazılım/elektronik/perakende). Bu belgenin özgünlüğü şu adresten bağımsız olarak doğrulanabilir: https://epats.turkpatent.gov.tr/run/TP/DOGRULA/goruntule?ID=5707CF6177530827E0635A01A8C0309A
+  Not: Bu başvuru şu anda incelenme aşamasındadır, henüz tescil süreci tamamlanmamıştır; ancak başvuru tarihi ve başvuru sahibi bilgileri, markanın şirketimize ait olduğunu ve önceliğimizi göstermektedir.
+- Resmi web sitemizdeki "Hakkımızda" sayfası da aynı bilgiyi teyit etmektedir: https://smartq.com.tr/hakkimizda/
+
+Ayrıca, olası her türlü belirsizliği ortadan kaldırmak amacıyla uygulamanın görünen adını da güncelledik: uygulama daha önce cihaz ana ekranında ve mağaza listelemesinde "SmartQ Home" olarak görünüyordu; bunu, marka başvurumuzla birebir örtüşecek şekilde sade "SmartQ" olarak değiştirdik (bkz. yeni yüklenen 4.0.0 (10) sürümü, hem CFBundleDisplayName hem mağaza uygulama adı güncellendi).
+
+Özetle: "SmartQ" ismi ve ilişkili tüm içerik, uygulama içindeki her referans dahil, tamamen şirketimize aittir; üçüncü bir tarafa ait herhangi bir marka, içerik veya donanım söz konusu değildir.
+
+Ek belgeye ihtiyaç duyarsanız memnuniyetle sağlarız.
+
+Saygılarımızla,
+SmartQ Ekibi

@@ -1,0 +1,19 @@
+Hello,
+
+Thank you for your feedback under Guideline 5.2.1 (Legal - Intellectual Property). We have reviewed the issue and are both providing evidence and making a fix at the source.
+
+The name "SmartQ" is an original trademark belonging to our company (İMS Yazılım Otomasyon Sistemleri Elektronik Taşımacılık Medikal Sanayi ve Ticaret Limited Şirketi) and does not belong to, or infringe upon the rights of, any third party. Both the app and the hardware it connects to (the "Ana Kutu" home automation controller) are entirely designed, developed, and manufactured by our company.
+
+As evidence:
+- We are attaching our official trademark application filed with the Turkish Patent and Trademark Office (Türk Patent ve Marka Kurumu) for the word mark "smartq" (Application No: 2026/102000, Filing Date: 05.08.2026, Applicant: İMS Yazılım Otomasyon Sistemleri Elektronik Taşımacılık Medikal Sanayi ve Ticaret Limited Şirketi, Classes: 09 and 35 — software/electronics/retail). The authenticity of this document can be independently verified at: https://epats.turkpatent.gov.tr/run/TP/DOGRULA/goruntule?ID=5707CF6177530827E0635A01A8C0309A
+  Note: This application is currently under examination and registration has not yet been finalized; however, the filing date and applicant information establish that the mark belongs to our company and confirm our priority.
+- The "About Us" page on our official website also confirms the same information: https://smartq.com.tr/hakkimizda/
+
+In addition, to remove any possible ambiguity, we have also updated the app's displayed name: the app previously appeared as "SmartQ Home" on the device home screen and in the store listing; we have changed this to plain "SmartQ" so it matches our trademark application exactly (see newly uploaded build 4.0.0 (10) — both the CFBundleDisplayName and the store app name have been updated).
+
+In summary: the name "SmartQ" and all associated content, including every reference within the app, belongs entirely to our company; there is no third-party trademark, content, or hardware involved.
+
+We are happy to provide any additional documentation if needed.
+
+Best regards,
+The SmartQ Team

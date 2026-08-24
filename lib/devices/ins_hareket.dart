@@ -1,14 +1,29 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../user/userManagementService.dart';
 import '../user/appUser.dart';
+import '../comminication/dataBridgeServis.dart';
 import 'LogicButton.dart';
 import 'TermostatButton.dart';
 import 'anahtar.dart';
 import 'tool.dart';
 import 'ins_ui_helper.dart';
 
+// Hareket sensöründe sadece bu iki process anlamlı -- firmware'in
+// isSensorDriven (PR_ONOFF/PR_MXMN) mantığı, Occupied/Vacant event'lerine
+// SADECE bu ikisinde tepki veriyor; touchKeyProcessOptions'ta bilerek
+// dışarıda bırakılmıştı çünkü tuş bunları asla üretmez, burası tam tersi.
+const List<command_type> motionProcessOptions = [
+  command_type(8, "Max On/Off (Sens)"),
+  command_type(10, "MxOn/MnOff(Sens)"),
+];
+
+bool _isMotionConfigOpen = false;
+
 void showMotionConfigPopup(int deviceId, int channel, InsIntroScn initialIns) {
+  if (_isMotionConfigOpen) return; // hızlı art arda tıklama -- aynı popup iki kez açılmasın
+  _isMotionConfigOpen = true;
   final theme = Get.theme;
   final userManager = Get.find<UserManagementService>();
   const String instanceLabel = "Hareket";
@@ -28,6 +43,10 @@ void showMotionConfigPopup(int deviceId, int channel, InsIntroScn initialIns) {
   // Yerel (kanal=10) hareket sensörlerinde "retrigger" timer süresi (DAKİKA) — tset alanı
   // üzerinden taşınıyor (termostatlarda kullanılan "hedef sıcaklık" alanının bu tipte karşılığı yok).
   final RxInt sureDakika = (getUpdatedIns().tset > 0 ? getUpdatedIns().tset : 1).obs;
+
+  final RxBool isSaving = false.obs;
+  StreamSubscription? saveSubscription;
+  Timer? saveTimeoutTimer;
 
   final worker = ever(userManager.activeInsIntroList, (_) {
     final updated = getUpdatedIns();
@@ -99,11 +118,13 @@ void showMotionConfigPopup(int deviceId, int channel, InsIntroScn initialIns) {
                 List<DropdownMenuItem<int>> items = [];
 
                 switch (selectedCommand.value) {
-                  case 0: 
-                    items = userManager.activeDevices
-                        .where((d) => d is! LButtonDevice && d is! AnahtarDevice && d is! ThermostatDevice)
-                        .map((d) => DropdownMenuItem(value: d.id, child: Text(d.name ?? "Cihaz ${d.id}", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold))))
-                        .toList();
+                  case 0:
+                    items = [
+                      const DropdownMenuItem(value: 99, child: Text("Tüm Lambalar", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold))),
+                      ...userManager.activeDevices
+                          .where((d) => d is! LButtonDevice && d is! AnahtarDevice && d is! ThermostatDevice)
+                          .map((d) => DropdownMenuItem(value: d.id, child: Text(d.name ?? "Cihaz ${d.id}", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)))),
+                    ];
                     break;
                   case 1: 
                     items = userManager.activeGroups
@@ -166,9 +187,9 @@ void showMotionConfigPopup(int deviceId, int channel, InsIntroScn initialIns) {
                   ),
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton<int>(
-                      value: getprocesstype.any((e) => e.id == selectedProcess.value) ? selectedProcess.value : 15,
+                      value: motionProcessOptions.any((e) => e.id == selectedProcess.value) ? selectedProcess.value : motionProcessOptions.first.id,
                       isExpanded: true,
-                      items: getprocesstype.map((pt) => DropdownMenuItem(
+                      items: motionProcessOptions.map((pt) => DropdownMenuItem(
                         value: pt.id,
                         child: Text(pt.name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                       )).toList(),
@@ -176,6 +197,15 @@ void showMotionConfigPopup(int deviceId, int channel, InsIntroScn initialIns) {
                     ),
                   ),
                 )),
+
+                Obx(() {
+                  final desc = processDescriptions[selectedProcess.value];
+                  if (desc == null) return const SizedBox.shrink();
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 8, left: 4, right: 4),
+                    child: Text(desc, style: TextStyle(fontSize: 13, color: theme.colorScheme.onSurface.withOpacity(0.6), fontStyle: FontStyle.italic)),
+                  );
+                }),
 
                 const SizedBox(height: 25),
 
@@ -235,7 +265,7 @@ void showMotionConfigPopup(int deviceId, int channel, InsIntroScn initialIns) {
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.symmetric(horizontal: 10),
-          child: Row(
+          child: Obx(() => Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               buildBottomIconButton(Icons.refresh, "Yenile", Colors.blueGrey, () {
@@ -266,37 +296,104 @@ void showMotionConfigPopup(int deviceId, int channel, InsIntroScn initialIns) {
               buildBottomIconButton(Icons.cancel_outlined, "İptal", Colors.red, () {
                 Get.back();
               }, iconSize: 40, fontSize: 15),
-              buildBottomIconButton(Icons.check_circle_outline, "Kaydet", Colors.green, () {
-                int insKanal = 255;
-                if (selectedCommand.value == 0) {
-                  final targetDev = userManager.activeDevices.firstWhereOrNull(
-                    (d) => d.id == selectedTargetId.value && d is! LButtonDevice && d is! AnahtarDevice && d is! ThermostatDevice
-                  );
-                  if (targetDev != null) {
-                    insKanal = targetDev.channel;
+              if (isSaving.value)
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(width: 40, height: 40, child: Padding(padding: EdgeInsets.all(8), child: CircularProgressIndicator(strokeWidth: 3))),
+                      SizedBox(height: 6),
+                      Text("Kaydediliyor...", style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                )
+              else
+                buildBottomIconButton(Icons.check_circle_outline, "Kaydet", Colors.green, () {
+                  // Hedefin bulunduğu DALI kanalı: Lamba/Tüm-Lambalar için hedef
+                  // cihazın kendi kanalı (Tüm Lambalar'da cihaz yok, bu yüzden
+                  // Grup/Senaryo'daki gibi Anahtar'ın kendi kanalına düşer);
+                  // Grup/Senaryo SADECE Anahtar'ın kendi bulunduğu kanalda uygulanır.
+                  int insKanal = 255;
+                  if (selectedCommand.value == 0 && selectedTargetId.value != 99) {
+                    final targetDev = userManager.activeDevices.firstWhereOrNull(
+                      (d) => d.id == selectedTargetId.value && d is! LButtonDevice && d is! AnahtarDevice && d is! ThermostatDevice
+                    );
+                    if (targetDev != null) {
+                      insKanal = targetDev.channel;
+                    }
+                  } else if ((selectedCommand.value == 0 && selectedTargetId.value == 99) ||
+                      selectedCommand.value == 1 || selectedCommand.value == 2) {
+                    insKanal = channel;
                   }
-                }
 
-                sendToOutbox({
-                  "com": "set_instance",
-                  "adr": deviceId,
-                  "ins": initialIns.iadr,
-                  "kanal": channel,
-                  "act": status.value,
-                  "stat": action.value == 1 ? 255 : 0,
-                  "cmtype": selectedCommand.value,
-                  "cmadr": selectedTargetId.value,
-                  "pro": selectedProcess.value,
-                  "ins_kanal": insKanal,
-                  "tset": sureDakika.value,
-                });
-                Get.back();
-                Get.snackbar("Başarılı", "Ayarlar güncellendi.");
-              }, iconSize: 40, fontSize: 15),
+                  sendToOutbox({
+                    "com": "set_instance",
+                    "adr": deviceId,
+                    "ins": initialIns.iadr,
+                    "kanal": channel,
+                    "act": status.value,
+                    "stat": action.value == 1 ? 255 : 0,
+                    "cmtype": selectedCommand.value,
+                    "cmadr": selectedTargetId.value,
+                    "pro": selectedProcess.value,
+                    "ins_kanal": insKanal,
+                    "tset": sureDakika.value,
+                  });
+
+                  // Anahtar'ın PIR mode1 bloğu (main.c, KEY_OCCUPIED/KEY_VACANT)
+                  // sadece Lamba ve Grup hedeflerini destekliyor -- Senaryo o
+                  // blokta hiç ele alınmıyor (scene_on sadece KEY_PRESSED'te
+                  // çalışıyor), Anahtar (virtual switch) hiç işlenmiyor. Bu
+                  // yüzden mode 1 yazımı sadece Lamba/Tüm-Lambalar/Grup için yapılır.
+                  final needsLocalWrite = selectedCommand.value == 0 || selectedCommand.value == 1;
+
+                  if (!needsLocalWrite) {
+                    Get.back();
+                    Get.snackbar("Başarılı", "Ayarlar güncellendi.");
+                    return;
+                  }
+
+                  isSaving.value = true;
+                  saveSubscription = Get.find<DataBridgeService>().dataStream.listen((data) {
+                    final payload = data['full_payload'];
+                    if (payload is Map &&
+                        payload['com'] == 'set_local_action' &&
+                        payload['adr'] == deviceId &&
+                        payload['ins'] == initialIns.iadr) {
+                      saveTimeoutTimer?.cancel();
+                      saveSubscription?.cancel();
+                      isSaving.value = false;
+                      Get.back();
+                      Get.snackbar("Başarılı", "Ayarlar güncellendi.");
+                    }
+                  });
+                  saveTimeoutTimer = Timer(const Duration(seconds: 20), () {
+                    saveSubscription?.cancel();
+                    isSaving.value = false;
+                    Get.back();
+                    Get.snackbar("Zaman Aşımı", "Anahtar'dan onay alınamadı, tekrar deneyin.", backgroundColor: Colors.orange);
+                  });
+
+                  sendToOutbox({
+                    "com": "set_local_action",
+                    "adr": deviceId,
+                    "ins": initialIns.iadr,
+                    "kanal": channel,
+                    "group0": selectedCommand.value,
+                    "group1": selectedProcess.value,
+                    "group2": selectedTargetId.value,
+                  });
+                }, iconSize: 40, fontSize: 15),
             ],
-          ),
+          )),
         ),
       ],
     ),
-  ).then((_) => worker.dispose());
+  ).then((_) {
+    worker.dispose();
+    saveSubscription?.cancel();
+    saveTimeoutTimer?.cancel();
+    _isMotionConfigOpen = false;
+  });
 }

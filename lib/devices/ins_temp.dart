@@ -9,7 +9,11 @@ import 'ins_ui_helper.dart';
 // ("Anahtar Ekle" ekranı, deviceSetupController.addSwitch) atanıyor — burada
 // tekrar atama/kaydetme yok, bilerek tek nokta bırakıldı. Bu popup salt bilgi
 // amaçlı: mevcut durumu gösterir, "Yenile" ile taze veri ister.
+bool _isTempPopupOpen = false;
+
 void showTempPopup(int deviceId, int channel, InsIntroScn initialIns, {String? label}) {
+  if (_isTempPopupOpen) return; // hızlı art arda tıklama -- aynı popup iki kez açılmasın
+  _isTempPopupOpen = true;
   final theme = Get.theme;
   final userManager = Get.find<UserManagementService>();
   final String instanceLabel = label ?? "Isı";
@@ -96,7 +100,10 @@ void showTempPopup(int deviceId, int channel, InsIntroScn initialIns, {String? l
         ),
       ],
     ),
-  ).then((_) => worker.dispose());
+  ).then((_) {
+    worker.dispose();
+    _isTempPopupOpen = false;
+  });
 }
 
 void showLuxPopup(InsIntroScn ins) {

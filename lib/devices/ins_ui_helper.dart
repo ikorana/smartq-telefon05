@@ -171,7 +171,11 @@ Widget buildTimerButton(String label, int value, VoidCallback onTap) {
   );
 }
 
+bool _isFilterWindowOpen = false;
+
 void showFilterWindow(BuildContext context, String label, int id, int insid, int kanal, {bool isMotion = false}) {
+  if (_isFilterWindowOpen) return; // hızlı art arda tıklama -- aynı popup iki kez açılmasın
+  _isFilterWindowOpen = true;
   final theme = Get.theme;
   // ... (içerik aynı başlangıç)
   final RxBool isLoading = true.obs;
@@ -325,10 +329,15 @@ void showFilterWindow(BuildContext context, String label, int id, int insid, int
   ).then((_) {
     subscription.cancel();
     timeoutTimer?.cancel();
+    _isFilterWindowOpen = false;
   });
 }
 
+bool _isTimersWindowOpen = false;
+
 void showTimersWindow(BuildContext context, String label, int id, int insid, int kanal, {bool stuckOnly = false, String stuckLabel = "Stuck"}) {
+  if (_isTimersWindowOpen) return; // hızlı art arda tıklama -- aynı popup iki kez açılmasın
+  _isTimersWindowOpen = true;
   final theme = Get.theme;
   // ... (içerik aynı başlangıç)
   final RxBool isLoading = true.obs;
@@ -455,5 +464,6 @@ void showTimersWindow(BuildContext context, String label, int id, int insid, int
   ).then((_) {
     subscription.cancel();
     timeoutTimer?.cancel();
+    _isTimersWindowOpen = false;
   });
 }
