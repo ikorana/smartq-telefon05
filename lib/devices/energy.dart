@@ -846,6 +846,7 @@ class EnergyDevice extends BaseDevice {
         name: name ?? 'energy'.tr,
         id: id,
         roomId: roomId,
+        channel: channel,
         isOn: isOn,
         isBlocked: _isInteractionBlocked.value,
         isRefreshing: _isRefreshingUI.value,

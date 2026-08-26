@@ -574,6 +574,7 @@ class GarageDevice extends BaseDevice {
         name: name ?? 'garage'.tr,
         id: id,
         roomId: roomId,
+        channel: channel,
         isOn: isOpen,
         isBlocked: _isInteractionBlocked.value,
         isRefreshing: _isRefreshingUI.value,

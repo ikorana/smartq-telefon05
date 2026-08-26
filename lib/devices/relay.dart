@@ -1488,6 +1488,7 @@ class RelayDevice extends BaseDevice {
         name: name ?? 'relay'.tr,
         id: id,
         roomId: roomId,
+        channel: channel,
         isOn: isOn,
         isBlocked: _isInteractionBlocked.value,
         isRefreshing: _isRefreshingUI.value,

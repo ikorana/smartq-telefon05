@@ -589,6 +589,7 @@ class MWaterDevice extends BaseDevice {
         name: name ?? 'M-Water',
         id: id,
         roomId: roomId,
+        channel: channel,
         isOn: isOpen,
         isBlocked: _isInteractionBlocked.value,
         isRefreshing: _isRefreshingUI.value,

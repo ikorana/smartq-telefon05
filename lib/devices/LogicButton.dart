@@ -116,6 +116,7 @@ class LButtonDevice extends BaseDevice {
         name: name ?? "Anahtar",
         id: id,
         roomId: roomId,
+        channel: channel,
         isOn: isOn,
         isBlocked: isBusy.value,
         isRefreshing: _isRefreshingUI.value,

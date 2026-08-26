@@ -1096,6 +1096,7 @@ class BlindDevice extends BaseDevice {
         name: name ?? 'Panjur',
         id: id,
         roomId: roomId,
+        channel: channel,
         isOn: isOpen,
         isBlocked: _isInteractionBlocked.value,
         isRefreshing: _isRefreshingUI.value,

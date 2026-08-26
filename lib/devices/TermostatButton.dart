@@ -552,6 +552,7 @@ class ThermostatDevice extends BaseDevice {
         name: name ?? 'termostat'.tr,
         id: id,
         roomId: roomId,
+        channel: channel,
         isOn: relayStatus == 1,
         isBlocked: false,
         isRefreshing: false,

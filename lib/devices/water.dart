@@ -814,6 +814,7 @@ class WaterDevice extends BaseDevice {
         name: name ?? 'water'.tr,
         id: id,
         roomId: roomId,
+        channel: channel,
         isOn: isOn,
         isBlocked: _isInteractionBlocked.value,
         isRefreshing: _isRefreshingUI.value,

@@ -66,6 +66,7 @@ class AnahtarDevice extends BaseDevice {
         name: name ?? 'Anahtar',
         id: id,
         roomId: roomId,
+        channel: channel,
         isOn: false, // Anahtar cihazının kendisi On/Off değil, alt cihazları var
         isBlocked: _isInteractionBlocked.value,
         isRefreshing: _isRefreshingUI.value,
@@ -83,6 +84,50 @@ class AnahtarDevice extends BaseDevice {
   void _showInstancesDialog() {
     final userManager = Get.find<UserManagementService>();
     final theme = Get.theme;
+
+    // "Özellik Oku": controller'ın kendi alt-cihaz taramasını tetikler, ama
+    // sonucu uygulamaya HEMEN gelmez -- controller (command_get_instance)
+    // taramayı bitirince ayrı bir "com":"search" mesajı gönderir ("Arama
+    // bitti. Alt Cihaz Tanımı ile Sisteminizi yenileyiniz."), o mesaj
+    // gelmeden instance verisi tazelenmiş olmaz. Bu yüzden o mesajı (ya da
+    // 15sn zaman aşımını) bekleyip ardından gerçek ins_intro'yu istiyoruz.
+    final RxBool isReadingInstances = false.obs;
+    StreamSubscription? readSubscription;
+    Timer? readTimeoutTimer;
+
+    void startInstanceRead() {
+      if (isReadingInstances.value) return;
+      isReadingInstances.value = true;
+      _sendToOutbox({"com": "get_instance", "adres": id, "kanal": channel});
+
+      bool searchDone = false;
+
+      readSubscription = Get.find<DataBridgeService>().dataStream.listen((data) {
+        final payload = data['full_payload'];
+        if (payload is! Map) return;
+
+        if (!searchDone && payload['com'] == 'search') {
+          searchDone = true;
+          _sendToOutbox({"com": "ins_intro"});
+        } else if (searchDone && payload['com'] == 'ins_intro') {
+          readTimeoutTimer?.cancel();
+          readSubscription?.cancel();
+          isReadingInstances.value = false;
+          Get.snackbar("Başarılı", "Özellikler okunup kaydedildi.");
+        }
+      });
+
+      readTimeoutTimer = Timer(const Duration(seconds: 15), () {
+        readSubscription?.cancel();
+        isReadingInstances.value = false;
+        if (!searchDone) {
+          // Mesaj kaybolmuş olabilir ama tarama muhtemelen bitmiştir --
+          // en iyi çabayla yine de tazeleyelim.
+          _sendToOutbox({"com": "ins_intro"});
+        }
+        Get.snackbar("Zaman Aşımı", "Cihazdan onay alınamadı, tekrar deneyin.", backgroundColor: Colors.orange);
+      });
+    }
 
     String getTargetDescription(InsIntroScn ins) {
       if (ins.cm < 0 || ins.cm >= getcommandtype.length) return "";
@@ -212,8 +257,21 @@ class AnahtarDevice extends BaseDevice {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              buildBottomIconButton(Icons.read_more, "Özellik Oku", Colors.blue, () {
-                _sendToOutbox({"com": "get_instance", "adres": id, "kanal": channel});
+              Obx(() => isReadingInstances.value
+                  ? const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          SizedBox(width: 40, height: 40, child: Padding(padding: EdgeInsets.all(8), child: CircularProgressIndicator(strokeWidth: 3))),
+                          SizedBox(height: 6),
+                          Text("Okunuyor...", style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                    )
+                  : buildBottomIconButton(Icons.read_more, "Özellik Oku", Colors.blue, startInstanceRead, iconSize: 40, fontSize: 15)),
+              buildBottomIconButton(Icons.fingerprint, "Identify", Colors.deepPurple, () {
+                _sendToOutbox({"com": "identfy", "adres": id, "kanal": channel});
               }, iconSize: 40, fontSize: 15),
               buildBottomIconButton(Icons.settings_input_component, "Mode", theme.colorScheme.primary, () {
                 final instances = userManager.activeInsIntroList.where((ins) => ins.adr == id).toList();
@@ -237,7 +295,10 @@ class AnahtarDevice extends BaseDevice {
           ),
         ],
       ),
-    );
+    ).then((_) {
+      readSubscription?.cancel();
+      readTimeoutTimer?.cancel();
+    });
   }
 
   _InstanceDisplayInfo _getInstanceInfo(int type) {

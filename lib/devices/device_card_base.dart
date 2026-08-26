@@ -8,6 +8,7 @@ class DeviceCardBase extends StatelessWidget {
   final String name;
   final int id;
   final int? roomId;
+  final int? channel;
   final bool isOn;
   final bool isBlocked;
   final bool isRefreshing;
@@ -23,6 +24,7 @@ class DeviceCardBase extends StatelessWidget {
     required this.name,
     required this.id,
     this.roomId,
+    this.channel,
     required this.isOn,
     required this.isBlocked,
     required this.isRefreshing,
@@ -42,6 +44,7 @@ class DeviceCardBase extends StatelessWidget {
     return Obx(() {
       final bool isAllRooms = controller.selectedRoomId.value == null;
       final bool hasRoom = roomId != null && roomId != 255;
+      final bool isWifi = channel == 0;
 
       final appColors = theme.extension<AppColors>();
       Color borderColor = Colors.grey.withOpacity(0.3);
@@ -89,7 +92,7 @@ class DeviceCardBase extends StatelessWidget {
       double displayHeight = (height?.value ?? (btnHigh.value * 1.5)) * (isTablet.value ? 1.0 : scale);
       double displayIconHeight = (iconHeight?.value ?? (btnIcoHigh.value * 1.5)) * (isTablet.value ? 1.0 : scale);
 
-      return AnimatedContainer(
+      final Widget card = AnimatedContainer(
         duration: const Duration(milliseconds: 300),
         width: displayWidth,
         height: displayHeight,
@@ -171,6 +174,32 @@ class DeviceCardBase extends StatelessWidget {
             ),
           ),
         ),
+      );
+
+      // kanal 0 -> Wifi, kanal 10 -> yerel (RS485/Modbus) -- ikisi aynı anda
+      // olamaz, aynı köşe rozetini paylaşıyorlar.
+      final bool isLocal = channel == 10;
+      if (!isWifi && !isLocal) return card;
+
+      // Rozet kartın (butonun) kendisine göre konumlanıyor -- ikonun Stack'i
+      // içinde değil, köşeye yakın olsun diye burada, en dışta.
+      return Stack(
+        clipBehavior: Clip.none,
+        children: [
+          card,
+          Positioned(
+            top: 14,
+            left: 16,
+            child: Icon(
+              isWifi ? Icons.wifi : Icons.cable,
+              size: 24,
+              color: Colors.grey.withOpacity(0.55),
+              shadows: [
+                Shadow(color: Colors.white.withOpacity(0.6), blurRadius: 2),
+              ],
+            ),
+          ),
+        ],
       );
     });
   }

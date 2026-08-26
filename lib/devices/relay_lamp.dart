@@ -386,6 +386,7 @@ class RelayLampDevice extends BaseDevice {
         name: name ?? 'lamp'.tr,
         id: id,
         roomId: roomId,
+        channel: channel,
         isOn: isOn,
         isBlocked: _isInteractionBlocked.value,
         isRefreshing: _isRefreshingUI.value,

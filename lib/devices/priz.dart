@@ -860,6 +860,7 @@ class PrizDevice extends BaseDevice {
         name: name ?? 'socket'.tr,
         id: id,
         roomId: roomId,
+        channel: channel,
         isOn: isOn,
         isBlocked: _isInteractionBlocked.value,
         isRefreshing: _isRefreshingUI.value,

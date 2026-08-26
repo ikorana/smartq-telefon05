@@ -554,6 +554,7 @@ class RGBDevice extends BaseDevice {
         name: name ?? 'RGB Device',
         id: id,
         roomId: roomId,
+        channel: channel,
         isOn: isOn,
         isBlocked: _isInteractionBlocked.value,
         isRefreshing: _isRefreshingUI.value,

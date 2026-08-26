@@ -574,6 +574,7 @@ class DoorDevice extends BaseDevice {
         name: name ?? 'door'.tr,
         id: id,
         roomId: roomId,
+        channel: channel,
         isOn: isOpen,
         isBlocked: _isInteractionBlocked.value,
         isRefreshing: _isRefreshingUI.value,

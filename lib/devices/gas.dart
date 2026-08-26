@@ -842,6 +842,7 @@ class GasDevice extends BaseDevice {
         name: name ?? 'gas'.tr,
         id: id,
         roomId: roomId,
+        channel: channel,
         isOn: false,
         isBlocked: _isInteractionBlocked.value,
         isRefreshing: _isRefreshingUI.value,
